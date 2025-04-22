@@ -1,0 +1,131 @@
+# depslib dependency file v1.0
+1743838892 source:c:\users\admin\desktop\csci291t\finalproject\main.cpp
+	<windows.h>
+	<stdlib.h>
+	<iostream>
+	<windows.h>
+	<_scene.h>
+
+1743852254 c:\users\admin\desktop\csci291t\finalproject\include\_scene.h
+	<_common.h>
+
+1742251248 c:\users\admin\desktop\csci291t\finalproject\include\_common.h
+	<windows.h>
+	<gl/gl.h>
+	<gl/glu.h>
+	<GL/glut.h>
+	<math.h>
+	<time.h>
+	<iostream>
+
+1734036732 c:\users\admin\desktop\csci291t\common\include\gl\glut.h
+	<windows.h>
+	<stdlib.h>
+	<GL/gl.h>
+	<GL/glu.h>
+
+1741229198 source:c:\users\admin\desktop\csci291t\finalproject\src\_2dplyer.cpp
+	"_2dplyer.h"
+
+1741227394 c:\users\admin\desktop\csci291t\finalproject\include\_2dplyer.h
+	<_common.h>
+	<_timer.h>
+	<_textureloader.h>
+
+1740448858 c:\users\admin\desktop\csci291t\finalproject\include\_timer.h
+	<_common.h>
+
+1743698353 c:\users\admin\desktop\csci291t\finalproject\include\_textureloader.h
+	<_common.h>
+	<SOIL.h>
+
+1668646408 c:\users\admin\desktop\csci291t\common\include\soil.h
+
+1743706667 source:c:\users\admin\desktop\csci291t\finalproject\src\_3dmodelloader.cpp
+	"_3dmodelloader.h"
+
+1743041948 c:\users\admin\desktop\csci291t\finalproject\include\_3dmodelloader.h
+	<_Common.h>
+	<_textureloader.h>
+	"Anorms.h"
+
+1742431430 c:\users\admin\desktop\csci291t\finalproject\include\anorms.h
+
+1743847868 source:c:\users\admin\desktop\csci291t\finalproject\src\_camera.cpp
+	"_camera.h"
+
+1743720370 c:\users\admin\desktop\csci291t\finalproject\include\_camera.h
+	<_common.h>
+
+1745212531 source:c:\users\admin\desktop\csci291t\finalproject\src\_final.cpp
+	"_final.h"
+
+1745212531 c:\users\admin\desktop\csci291t\finalproject\include\_final.h
+
+1743841520 source:c:\users\admin\desktop\csci291t\finalproject\src\_inputs.cpp
+	"_inputs.h"
+
+1743852409 c:\users\admin\desktop\csci291t\finalproject\include\_inputs.h
+	<_common.h>
+	<_model.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_2dplyer.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_scene.h>
+
+1743816765 c:\users\admin\desktop\csci291t\finalproject\include\_model.h
+	<_common.h>
+	<_textureloader.h>
+
+1740449260 c:\users\admin\desktop\csci291t\finalproject\include\_parallax.h
+	<_common.h>
+	<_textureloader.h>
+	<_timer.h>
+
+1740621090 c:\users\admin\desktop\csci291t\finalproject\include\_skybox.h
+	<_common.h>
+	<_textureloader.h>
+
+1738636754 source:c:\users\admin\desktop\csci291t\finalproject\src\_lighting.cpp
+	"_lighting.h"
+
+1738636462 c:\users\admin\desktop\csci291t\finalproject\include\_lighting.h
+	<_common.h>
+
+1743816765 source:c:\users\admin\desktop\csci291t\finalproject\src\_model.cpp
+	"_model.h"
+
+1740449260 source:c:\users\admin\desktop\csci291t\finalproject\src\_parallax.cpp
+	"_parallax.h"
+
+1743852387 source:c:\users\admin\desktop\csci291t\finalproject\src\_scene.cpp
+	"_scene.h"
+	<_lighting.h>
+	<_model.h>
+	<_inputs.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_2dplyer.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_ufo.h>
+
+1743816765 c:\users\admin\desktop\csci291t\finalproject\include\_ufo.h
+	<_common.h>
+	<_timer.h>
+	<_textureloader.h>
+
+1743706609 source:c:\users\admin\desktop\csci291t\finalproject\src\_textureloader.cpp
+	"_textureloader.h"
+
+1740449026 source:c:\users\admin\desktop\csci291t\finalproject\src\_timer.cpp
+	"_timer.h"
+
+1743850265 source:c:\users\admin\desktop\csci291t\finalproject\src\_ufo.cpp
+	"_ufo.h"
+
+1745214285 source:c:\users\admin\desktop\csci291t\finalproject\src\_skybox.cpp
+	"_skybox.h"
+
