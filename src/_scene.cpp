@@ -26,12 +26,26 @@ _parallax *info = new _parallax();
 _parallax *credits = new _parallax();
 _parallax *exits = new _parallax();
 
+enum Scenes
+{
+    Landing = 0,
+    NewGame = 1,
+    Help = 2,
+    Info = 3,
+    Credit = 4,
+    Exit = 5,
+    LevelOne = 6,
+    LevelTwo = 7
+};
+
+Scenes CurrentScene = Scenes::Landing;
+
 _scene::_scene()
 {
     //ctor
-    playerPosX = 0.0;
-    playerPosZ = 0.0;
-    playerAngleY = 0.0;
+    playerPosX = -120.0;
+    playerPosZ = 10.0;
+    playerAngleY = -20.0;
     allInactive = true;
     inLandingScene = true;
     inMenuScene = false;
@@ -196,14 +210,19 @@ GLvoid _scene::renderScene()
             exits->drawBkgrnd(dim.x, dim.y); // menu parallax
             glEnable(GL_LIGHTING);
         glPopMatrix();
-
         drawMenuScreen();
     }
     // Draw game when pressed enter - complete setup of player, weapon, camera
     else if (!inLandingScene && !inMenuScene && !inHelpScene && !inInfoScene &&
          !inCreditScene && !inExitScene && !inNewGame && !inCross)
     {
-        // Calculate forward direction based on player angle
+        renderLevelOne();
+    }
+}
+
+GLvoid _scene::renderLevelOne()
+{
+    // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
         float lookX = cos(angleRad);
         float lookZ = sin(angleRad);
@@ -214,7 +233,7 @@ GLvoid _scene::renderScene()
             playerPosX + lookX, 1.7, playerPosZ + lookZ,       // Look direction
             0.0, 1.0, 0.0                                   // Up vector
         );
-        // Skybox, player, Meteors
+        // Skybox, player
         glPushMatrix();                 // Draw skybox
             glTranslatef(0.0, 15.0, 0.0);
             glScalef(4.33,4.33,4.33);
@@ -229,36 +248,6 @@ GLvoid _scene::renderScene()
             ply2D->ply2DActions();
             ply2D->drawPly2D();
             glEnable(GL_LIGHTING);
-        glPopMatrix();
-
-        if(!firstPerson)        // Draw player model and weapon if not first person
-        {
-            glPushMatrix();
-                glTranslatef(playerPosX, 0.0, playerPosZ);
-                glScalef(0.1, 0.1, 0.1);
-                glRotatef(-90.0, 1.0, 0.0, 0.0);
-                glRotatef(playerAngleY, 0.0, 1.0, 0.0);
-
-                mdl3D->actions();
-                mdl3DW->actions();
-                mdl3D->Draw();
-                mdl3DW->Draw();
-            glPopMatrix();
-        }
-
-        glPushMatrix();     // Draw and update falling meteors
-            glDisable(GL_LIGHTING);
-            ufo->draw();
-            glEnable(GL_LIGHTING);
-            ufo->update(1.0);
-            for (int i = 0; i < 10; i++) {
-                // Check if meteor has landed and respawn it
-                if (!ufo->ufos[i].active) {
-                    if (rand() % 300 == 0) { // Random chance to respawn
-                        ufo->spawnRandom(i);
-                    }
-                }
-            }
         glPopMatrix();
 
         glPushMatrix();         // Draw weapon model at player's side
@@ -295,11 +284,7 @@ GLvoid _scene::renderScene()
                 glEnable(GL_TEXTURE_2D);
                 glEnable(GL_LIGHTING);
             glPopMatrix();
-
         }
-
-
-    }
 }
 
 bool _scene::isInGameScene()
@@ -416,10 +401,14 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case VK_ESCAPE:
         cout << "ESC pressed - switching to exit scene" << endl;
-        if (isInGameScene())
+        if (isInGameScene() || inMenuScene) {
+            inMenuScene = false;
             inExitScene = true;     // Exit pop when esc key pressed
-        else
-        {
+        }
+        else if (inExitScene) {
+            PostQuitMessage(0);
+        }
+        else {
             inExitScene = false;
             inLandingScene = false;
             inMenuScene = true;
@@ -448,7 +437,7 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             float rightX = sin(angleRad);
             float rightZ = -cos(angleRad);
 
-            switch (wParam)
+            /*switch (wParam)
             {
                 case 'W': // Forward
                     playerPosX += moveSpeed * forwardX;
@@ -469,19 +458,16 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     playerPosX += moveSpeed * rightX;
                     playerPosZ += moveSpeed * rightZ;
                     break;
-            }
-
+            }*/
         }
         break;
     }
     break;
 
-
     case WM_LBUTTONDOWN:
 {
     int mouseX = LOWORD(lParam);
     int mouseY = HIWORD(lParam);
-    cout << "X: " << mouseX << " Y: " << mouseY << endl;
 
     // === LANDING SCREEN ===
     if (inLandingScene)
@@ -575,8 +561,6 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             inCross = false;
         }
 
-
-
         if (inExitScene || inCross )
         {
             // YES Button: Close the window
@@ -632,7 +616,6 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     break;
 }
 
-
     case WM_KEYUP:
         if(wParam == VK_SPACE){
             cout << "Laser off" << endl;
@@ -652,14 +635,15 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_MBUTTONDOWN:
     case WM_MOUSEMOVE:
     {
-
-        int mouseX = LOWORD(lParam);
-        int mouseY = HIWORD(lParam);
-        if (mouseDragging) {
+        if (!inLandingScene && !inMenuScene && !inHelpScene && !inInfoScene &&
+         !inCreditScene && !inExitScene && !inNewGame && !inCross)
+         {
+            int mouseX = LOWORD(lParam);
+            int mouseY = HIWORD(lParam);
             int dx = mouseX - lastMouseX;
             int dy = mouseY - lastMouseY;
 
-            playerAngleY += dx * 0.3;  // Rotate player horizontally
+            playerAngleY += dx * 0.03;  // Rotate player horizontally
 
             // Clamp Y to avoid flipping
             if (cam->cameraAngleY > 89.0) cam->cameraAngleY = 89.0;
@@ -667,10 +651,9 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             lastMouseX = mouseX;
             lastMouseY = mouseY;
-        }
+         }
         break;
     }
-
 
     case WM_MOUSEWHEEL:
         break;

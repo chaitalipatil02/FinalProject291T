@@ -33,6 +33,7 @@ class _inputs
         void mouseEventUp();// ToDo: address accordingly
 
         void mouseWheel(_model*,double);
+        void mouseMove(_camera* cam, double x, double y);
         void mouseMove(_skyBox*,double,double);
 
         double prev_mouseX;

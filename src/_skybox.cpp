@@ -9,16 +9,17 @@ _skyBox::~_skyBox()
 {
     //dtor
 }
+
 void _skyBox::skyBoxInit()
 {
     glGenTextures(6,tex);
 
-    tex[0] = textures->loadImages("images/1side.png");
-    tex[1] = textures->loadImages("images/side.jpg");
-    tex[2] = textures->loadImages("images/side.jpg");
-    tex[3] = textures->loadImages("images/ground.jpg");
-    tex[4] = textures->loadImages("images/side.jpg");
-    tex[5] = textures->loadImages("images/side.jpg");
+    tex[0] = textures->loadImages("images/LevelOne/1side.png");
+    tex[1] = textures->loadImages("images/LevelOne/side.jpg");
+    tex[2] = textures->loadImages("images/LevelOne/side.jpg");
+    tex[3] = textures->loadImages("images/LevelOne/ground.jpg");
+    tex[4] = textures->loadImages("images/LevelOne/side.jpg");
+    tex[5] = textures->loadImages("images/LevelOne/side.jpg");
 
     xMin = yMin = 0.0;
     xMax = yMax = 1.0;

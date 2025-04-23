@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <windows.h>		// Header File For Windows
+#include<string.h>
 
 #include <_scene.h>
 

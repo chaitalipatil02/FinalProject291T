@@ -1,0 +1,139 @@
+# depslib dependency file v1.0
+1745283603 source:c:\users\kevca\desktop\csci291\final\images\main.cpp
+	<windows.h>
+	<stdlib.h>
+	<iostream>
+	<windows.h>
+	<_scene.h>
+
+1745451620 c:\users\kevca\desktop\csci291\final\include\_scene.h
+	<_common.h>
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\_common.h
+	<windows.h>
+	<gl/gl.h>
+	<gl/glu.h>
+	<GL/glut.h>
+	<math.h>
+	<time.h>
+	<iostream>
+
+1738032423 c:\users\kevca\desktop\csci291\common\include\gl\glut.h
+	<windows.h>
+	<stdlib.h>
+	<GL/gl.h>
+	<GL/glu.h>
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_2dplyer.cpp
+	"_2dplyer.h"
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\_2dplyer.h
+	<_common.h>
+	<_timer.h>
+	<_textureloader.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_timer.h
+	<_common.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_textureloader.h
+	<_common.h>
+	<SOIL.h>
+
+1739244587 c:\users\kevca\desktop\csci291\common\include\soil.h
+
+1745284787 source:c:\users\kevca\desktop\csci291\final\src\_3dmodelloader.cpp
+	"_3dmodelloader.h"
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\_3dmodelloader.h
+	<_Common.h>
+	<_textureloader.h>
+	"Anorms.h"
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\anorms.h
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_camera.cpp
+	"_camera.h"
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\_camera.h
+	<_common.h>
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_final.cpp
+	"_final.h"
+
+1745283601 c:\users\kevca\desktop\csci291\final\include\_final.h
+
+1745448180 source:c:\users\kevca\desktop\csci291\final\src\_inputs.cpp
+	"_inputs.h"
+
+1745285081 c:\users\kevca\desktop\csci291\final\include\_inputs.h
+	<_common.h>
+	<_model.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_2dplyer.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_scene.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_model.h
+	<_common.h>
+	<_textureloader.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_parallax.h
+	<_common.h>
+	<_textureloader.h>
+	<_timer.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_skybox.h
+	<_common.h>
+	<_textureloader.h>
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_lighting.cpp
+	"_lighting.h"
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_lighting.h
+	<_common.h>
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_model.cpp
+	"_model.h"
+
+1745283602 source:c:\users\kevca\desktop\csci291\final\src\_parallax.cpp
+	"_parallax.h"
+
+1745452145 source:c:\users\kevca\desktop\csci291\final\src\_scene.cpp
+	"_scene.h"
+	<_lighting.h>
+	<_model.h>
+	<_inputs.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_2dplyer.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_ufo.h>
+
+1745283602 c:\users\kevca\desktop\csci291\final\include\_ufo.h
+	<_common.h>
+	<_timer.h>
+	<_textureloader.h>
+
+1745450287 source:c:\users\kevca\desktop\csci291\final\src\_skybox.cpp
+	"_skybox.h"
+
+1745283603 source:c:\users\kevca\desktop\csci291\final\src\_textureloader.cpp
+	"_textureloader.h"
+
+1745283603 source:c:\users\kevca\desktop\csci291\final\src\_timer.cpp
+	"_timer.h"
+
+1745283603 source:c:\users\kevca\desktop\csci291\final\src\_ufo.cpp
+	"_ufo.h"
+
+1745342003 source:c:\users\kevca\desktop\csci291\final\main.cpp
+	<windows.h>
+	<stdlib.h>
+	<iostream>
+	<windows.h>
+	<string.h>
+	<_scene.h>
+

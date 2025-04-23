@@ -140,22 +140,17 @@ void _inputs::keyPressed(_3dmodelloader* ply,_3dmodelloader* W )
 
 void _inputs::keyPressed(_camera* cm)
 {
-  //  cout<<wParam<<endl;
       switch(wParam)
     {
         case 0x57: // w
               cm->camMoveFdBd(-1);
-
              break;
         case 0x53: //s
               cm->camMoveFdBd(1);
              break;
-
         case  65: //a
-
             cm->camMoveLtRt(-1);
             break;
-
         case  68://d
             cm->camMoveLtRt(1);
              break;
@@ -207,6 +202,23 @@ void _inputs::mouseWheel(_model* mdl, double delta)
 {
      mdl->pos.z +=delta/100.0;
 }
+
+void _inputs::mouseMove(_camera* cam, double x, double y)
+{
+    //if(mouse_translate)
+    //{
+    cam->des.y += (x-prev_mouseX)/3.0;
+    cam->des.x += (y-prev_mousey)/3.0;
+    //}
+    if(mouse_rotate)
+    {
+       cam->des.x += (x-prev_mouseX)/100.0;
+       cam->des.y -= (y-prev_mousey)/100.0;
+    }
+    prev_mouseX =x;
+    prev_mousey =y;
+}
+
 
 void _inputs::mouseMove(_skyBox* mdl, double x, double y)
 {

@@ -12,6 +12,7 @@ class _scene
         GLvoid resizeWindow(GLsizei width, GLsizei height);// resizing window
         GLint IniGL();                                    //initialization
         GLvoid renderScene();                              // Draw Scene
+        GLvoid renderLevelOne();
 
         int winMsg(HWND	hWnd,			// Handle For This Window
                    UINT	uMsg,			// Message For This Window
