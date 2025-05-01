@@ -75,6 +75,7 @@ class _scene
          bool inLandingScene, inMenuScene, inHelpScene, inInfoScene, inCreditScene, inExitScene, inNewGame, inCross, isShooting;
          bool isLevelTwo, useLevelTwoTextures;      // Skybox for level two
          bool playerFacingLeft[15];  // true = facing left, false = facing right
+         bool playerVisible[15];
 
     protected:
 

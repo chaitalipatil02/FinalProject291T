@@ -38,6 +38,8 @@
 		</Compiler>
 		<Linker>
 			<Add library="../Common/lib/libSOIL.a" />
+			<Add library="../Common/lib/libirrKlang.a" />
+			<Add library="../Common/lib/irrKlang.lib" />
 			<Add library="glut32" />
 			<Add library="opengl32" />
 			<Add library="glu32" />
@@ -57,6 +59,7 @@
 		<Unit filename="include/_parallax.h" />
 		<Unit filename="include/_scene.h" />
 		<Unit filename="include/_skybox.h" />
+		<Unit filename="include/_sounds.h" />
 		<Unit filename="include/_textureloader.h" />
 		<Unit filename="include/_timer.h" />
 		<Unit filename="include/_ufo.h" />
@@ -71,6 +74,7 @@
 		<Unit filename="src/_parallax.cpp" />
 		<Unit filename="src/_scene.cpp" />
 		<Unit filename="src/_skybox.cpp" />
+		<Unit filename="src/_sounds.cpp" />
 		<Unit filename="src/_textureloader.cpp" />
 		<Unit filename="src/_timer.cpp" />
 		<Unit filename="src/_ufo.cpp" />
