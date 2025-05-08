@@ -8,6 +8,9 @@
 #include <_camera.h>
 #include <_3dmodelloader.h>
 #include <_ufo.h>
+#include <_sounds.h>
+
+bool useLevelTwoTextures = false;
 
 _lighting *myLight = new _lighting();
 _model *myModel = new _model();
@@ -25,27 +28,23 @@ _parallax *help = new _parallax();
 _parallax *info = new _parallax();
 _parallax *credits = new _parallax();
 _parallax *exits = new _parallax();
+_sounds *snds = new _sounds();
 
-enum Scenes
-{
-    Landing = 0,
-    NewGame = 1,
-    Help = 2,
-    Info = 3,
-    Credit = 4,
-    Exit = 5,
-    LevelOne = 6,
-    LevelTwo = 7
-};
 
-Scenes CurrentScene = Scenes::Landing;
+typedef struct{
+    float time;
+    float rot;
+    bool fwd;
+}plyDir;
+
+plyDir playerRot = {120,0,true};
 
 _scene::_scene()
 {
     //ctor
-    playerPosX = -120.0;
-    playerPosZ = 10.0;
-    playerAngleY = -20.0;
+    playerPosX = 10.0;
+    playerPosZ = 120.0;
+    playerAngleY = -110.0;
     allInactive = true;
     inLandingScene = true;
     inMenuScene = false;
@@ -57,12 +56,33 @@ _scene::_scene()
     shootDirX = 0.0f;
     shootDirZ = -1.0f;
     isShooting = false;
+    isLevelTwo = false;
+    useLevelTwoTextures = false;
+    moveTimer = 0.0;
+
+    for (int i = 0; i < 15; i++) {
+        playerPositions[i].x = rand() % 60 - 30;  // random X between -30 and +30
+        playerPositions[i].y = 0.0;
+        playerPositions[i].z = rand() % 80 + 40;  // random Z between 30 and 90
+    }
+
+    for (int i = 0; i < 10; i++) {
+        bullets[i].live = false;
+    }
+
+    for (int i = 0; i < 15; i++) {
+        if (i % 2 == 0)
+            playerFacingLeft[i] = true;  // half face left
+        else
+            playerFacingLeft[i] = false; // half face right
+    }
 }
 
 _scene::~_scene()
 {
     //dtor
 }
+
 GLvoid _scene::resizeWindow(GLsizei width, GLsizei height)
 {
     GLfloat Ratio = (GLfloat)width/(GLfloat)height;
@@ -90,21 +110,26 @@ GLint _scene::IniGL()
     glEnable(GL_COLOR_MATERIAL);
     myLight->setupLight(GL_LIGHT0);
     myModel->initModel("images/sun.jpg");
-    prlx->parallaxInit("images/game.png");
-    ply2D->ply2Dinit("images/ali.png",6,4);
+    prlx->parallaxInit("images/landing.png");
+    ply2D->ply2Dinit("images/man.png",6,8);
     mdl3D->initModel("images/models/aliensoldier/tris.md2");
     mdl3DW->initModel("images/models/aliensoldier/weapon.md2");
     ufo->initUFO("images/sun.jpg");
 
 
-    menu->parallaxInit("images/menunew.png");
-    help->parallaxInit("images/menuhelp.png");
-    info->parallaxInit("images/menuinfo.png");
-    credits->parallaxInit("images/menucredits.png");
-    exits->parallaxInit("images/menuexit.png");
+    menu->parallaxInit("images/newgamefp.png");
+    help->parallaxInit("images/helpfp.png");
+    info->parallaxInit("images/infofp.png");
+    credits->parallaxInit("images/creditsfp.png");
+    exits->parallaxInit("images/exitfp.png");
 
     sky->skyBoxInit();
+    //sky->skyBoxInit2();
+
     cam->camInit();
+
+    snds->initSound();
+    snds->playMusic("sounds/main music.mp3");
 
     dim.x = GetSystemMetrics(SM_CXSCREEN);
     dim.y = GetSystemMetrics(SM_CYSCREEN);
@@ -137,7 +162,7 @@ GLvoid _scene::renderScene()
         exitInit = false;
         if (!exitInit)       // Pop-up exit - esc key pressed
         {
-            exits->parallaxInit("images/menuexit.png");
+            exits->parallaxInit("images/exitfp.png");
             exitInit = true;
         }
         glPushMatrix();
@@ -216,11 +241,138 @@ GLvoid _scene::renderScene()
     else if (!inLandingScene && !inMenuScene && !inHelpScene && !inInfoScene &&
          !inCreditScene && !inExitScene && !inNewGame && !inCross)
     {
-        renderLevelOne();
+        if (!isLevelTwo)  // Level One active
+            renderLevelOne();
+        else              // Level Two active
+            renderLevelTwo();
     }
 }
 
 GLvoid _scene::renderLevelOne()
+{
+    if (playerRot.rot > 0) {
+        playerAngleY += 0.1;
+        playerRot.rot -= 0.1;
+        playerRot.time += 0.1;
+    } else {
+        if (playerRot.fwd){
+            if (playerRot.time <= 0){
+                playerRot.rot = 180;
+                playerRot.fwd = false;
+            } else {
+                playerRot.time -= 0.1;
+            }
+        } else {
+            if (playerRot.time < 20)
+                playerRot.time += 0.1;
+        }
+    }
+
+    // Calculate forward direction based on player angle
+    float angleRad = playerAngleY * PI / 180.0f;
+    float lookX = cos(angleRad);
+    float lookZ = sin(angleRad);
+
+    // Set camera (eyes at player's position)
+    gluLookAt(
+        playerPosX, 1.7, playerPosZ,                       // Player's eye position
+        playerPosX + lookX, 1.7, playerPosZ + lookZ,       // Look direction
+        0.0, 1.0, 0.0                                   // Up vector
+    );
+    // Skybox, player
+    glPushMatrix();                 // Draw skybox
+        glTranslatef(0.0, 15.0, 0.0);
+        glScalef(4.33,4.33,4.33);
+        glDisable(GL_LIGHTING);
+        sky->drawSkyBox();
+        glEnable(GL_LIGHTING);
+    glPopMatrix();
+
+    // Timer to move players
+    moveTimer += 0.0000000000000016;
+
+    if (moveTimer >= moveInterval) {
+        for (int i = 0; i < 15; i++) {
+            if (playerFacingLeft[i]) {
+                playerPositions[i].x -= 0.001;
+            } else {
+                playerPositions[i].x += 0.001;
+            }
+        }
+        moveTimer = 0.0f;
+    }
+
+    // Draw players
+    for (int i = 0; i < 15; i++) {
+        glPushMatrix();
+        glTranslatef(playerPositions[i].x, playerPositions[i].y, playerPositions[i].z);
+        glScalef(3.33, 3.33, 3.33);
+        glDisable(GL_LIGHTING);
+        glEnable(GL_TEXTURE_2D);
+
+        if (playerFacingLeft[i]) {
+            glScalef(-1.0, 1.0, 1.0);  // Flip to face left
+            ply2D->actiontrigger = ply2D->WALKLEFT;
+        } else {
+            ply2D->actiontrigger = ply2D->WALKRIGHT;
+        }
+
+        ply2D->ply2DActions();
+        ply2D->drawPly2D();
+
+        glDisable(GL_TEXTURE_2D);
+        glEnable(GL_LIGHTING);
+        glPopMatrix();
+    }
+
+
+    glPushMatrix();         // Draw weapon model at player's side
+        // Calculate right vector based on player angle
+        angleRad = playerAngleY * PI / 180.0;
+        float rightX = cos(angleRad);
+        float rightZ = -sin(angleRad);
+
+        float weaponOffset = -1.0;
+
+        glTranslatef(
+            playerPosX + rightX * weaponOffset,
+            1.0,
+            playerPosZ + rightZ * weaponOffset
+        );
+        glRotatef(-playerAngleY, 0.0, 1.0, 0.0);  // Rotate gun with mouse-dragged camera
+        glScalef(0.1, 0.1, 0.1);
+        mdl3DW->actions();
+        mdl3DW->Draw();
+    glPopMatrix();
+
+    // Update and draw bullets
+    for (int i = 0; i < 10; i++) {
+        if (bullets[i].live) {
+            // Move bullet
+            bullets[i].pos.x += bullets[i].des.x * 1.0;
+            bullets[i].pos.y += bullets[i].des.y * 1.0;
+            bullets[i].pos.z += bullets[i].des.z * 1.0;
+
+            // Draw bullet
+            glPushMatrix();
+                glDisable(GL_LIGHTING);
+                glColor3f(1, 0, 0); // Red bullet
+                glTranslatef(bullets[i].pos.x, bullets[i].pos.y, bullets[i].pos.z);
+                glutSolidSphere(0.2, 8, 8); // Small sphere bullet
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+
+            // Deactivate if out of bounds
+            if (bullets[i].pos.x > 200 || bullets[i].pos.x < -200 ||
+                bullets[i].pos.z > 200 || bullets[i].pos.z < -200 ||
+                bullets[i].pos.y > 200 || bullets[i].pos.y < -10) {
+                bullets[i].live = false;
+            }
+        }
+    }
+}
+
+GLvoid _scene::renderLevelTwo()
 {
     // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
@@ -243,10 +395,12 @@ GLvoid _scene::renderLevelOne()
         glPopMatrix();
 
         glPushMatrix();
-            glTranslatef(0.0,0.0,0.0);
+            glTranslatef(0.0, 0.0, 0.0);
             glDisable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);
             ply2D->ply2DActions();
             ply2D->drawPly2D();
+            glDisable(GL_TEXTURE_2D);
             glEnable(GL_LIGHTING);
         glPopMatrix();
 
@@ -256,7 +410,7 @@ GLvoid _scene::renderLevelOne()
             float rightX = cos(angleRad);
             float rightZ = -sin(angleRad);
 
-            float weaponOffset = 1.0;
+            float weaponOffset = 5.5;
 
             glTranslatef(
                 playerPosX + rightX * weaponOffset,
@@ -286,6 +440,7 @@ GLvoid _scene::renderLevelOne()
             glPopMatrix();
         }
 }
+
 
 bool _scene::isInGameScene()
 {
@@ -347,8 +502,8 @@ void _scene::drawMenuScreen()
 {
     startW = 300;
     startH = 100;
-    startX = dim.x / 2 - startW / 2;
-    startY = dim.y / 2 - 70;
+    startX = 800;
+    startY = 400;
 
     helpW = 300;
     helpH = 60;
@@ -392,6 +547,7 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_KEYDOWN:
+        myKbMs->keyPressed(snds, "sounds/squid_game_alarm.mp3");
     switch (wParam)
     {
     case VK_SPACE:      // Shoot meteors when space key pressed
@@ -425,6 +581,19 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             inLandingScene = false;
         break;
 
+    case 'I':    // Press 1 -> Switch to Level One
+        useLevelTwoTextures = false;
+        isLevelTwo = false;
+        cout << "Switched to Level One" << endl;
+        break;
+
+    case 'J':    // Press 2 -> Switch to Level Two
+        useLevelTwoTextures = true;
+        isLevelTwo = true;
+        cout << "Switched to Level Two" << endl;
+        break;
+
+
     default:
         // Game movement
         if (!inLandingScene && !inMenuScene && !inHelpScene &&
@@ -436,6 +605,26 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             float forwardZ = sin(angleRad);
             float rightX = sin(angleRad);
             float rightZ = -cos(angleRad);
+
+            if (playerRot.rot <= 0) {
+                switch (wParam)
+                {
+                    case 'A':
+                        if (playerRot.fwd) {
+                            playerRot.rot = 180;
+                            playerRot.time += 5;
+                            playerRot.fwd = false;
+                        }
+                        break;
+                    case 'D':
+                         if (!playerRot.fwd && playerRot.time > 5) {
+                                cout << "twist" << endl;
+                            playerRot.rot = 180;
+                            playerRot.fwd = true;
+                         }
+                         break;
+                }
+            }
 
             /*switch (wParam)
             {
@@ -548,7 +737,7 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             inCross = false;
         }
 
-        // New Game button — accessible from ANY screen
+        // New Game button Â— accessible from ANY screen
         if (mouseX >= newGameX && mouseX <= newGameX + newGameW &&
             mouseY >= newGameY && mouseY <= newGameY + newGameH)
         {
@@ -607,18 +796,56 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             inGameScene = true;
         }
     }
+    else if (isInGameScene())
+    {
+        float normalizedX = (2.0f * mouseX) / dim.x - 1.0f;
+        float normalizedY = 1.0f - (2.0f * mouseY) / dim.y;
+
+        // Setup projection and view matrices
+        GLdouble modelview[16], projection[16];
+        GLint viewport[4];
+        glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+        glGetDoublev(GL_PROJECTION_MATRIX, projection);
+        glGetIntegerv(GL_VIEWPORT, viewport);
+
+        // Unproject mouse to world coordinates
+        GLdouble worldX, worldY, worldZ;
+        gluUnProject(mouseX, viewport[3] - mouseY, 0.5, modelview, projection, viewport, &worldX, &worldY, &worldZ);
+
+        // Direction
+        float dirX = worldX - playerPosX;
+        float dirY = worldY - 1.7f; // player eye height
+        float dirZ = worldZ - playerPosZ;
+
+        // Normalize direction
+        float length = sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+        dirX /= length;
+        dirY /= length;
+        dirZ /= length;
+
+        for (int i = 0; i < 10; i++) {
+            if (!bullets[i].live) {
+                bullets[i].pos.x = playerPosX + dirX * 2.0f;  // move bullet 2 units ahead
+                bullets[i].pos.y = 1.7f + dirY * 2.0f;
+                bullets[i].pos.z = playerPosZ + dirZ * 2.0f;
+                bullets[i].des.x = dirX;
+                bullets[i].des.y = dirY;
+                bullets[i].des.z = dirZ;
+                bullets[i].live = true;
+                break;
+            }
+        }
+
+    }
     mouseDragging = true;
     lastMouseX = LOWORD(lParam);
     lastMouseY = HIWORD(lParam);
     SetCapture(hWnd);  // lock mouse input to your window
     break;
-
-    break;
 }
 
     case WM_KEYUP:
         if(wParam == VK_SPACE){
-            cout << "Laser off" << endl;
             showLaser = false;
         }
         break;

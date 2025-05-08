@@ -6,7 +6,8 @@
 #include<_parallax.h>
 #include<_skybox.h>
 #include<_2dplyer.h>
-#include <_camera.h>
+#include<_camera.h>
+#include<_sounds.h>
 #include<_3dmodelloader.h>
 #include<_scene.h>
 
@@ -24,16 +25,16 @@ class _inputs
         void keyPressed(_parallax *);
         void keyPressed(_skyBox *);
         void keyPressed(_2DPlyer *);
-        void keyPressed(_3dmodelloader *,_3dmodelloader * );
+        void keyPressed(_3dmodelloader *,_3dmodelloader *);
         void keyPressed(_camera *);
         void keyPressed(_scene *);
+        void keyPressed(_sounds *, char *);
 
 
         void mouseEventDown(_model*, double,double);
         void mouseEventUp();// ToDo: address accordingly
 
         void mouseWheel(_model*,double);
-        void mouseMove(_camera* cam, double x, double y);
         void mouseMove(_skyBox*,double,double);
 
         double prev_mouseX;

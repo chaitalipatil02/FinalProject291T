@@ -4,7 +4,7 @@ _3dmodelloader::_3dmodelloader()
 {
     pos.x = 0;
     pos.y = 0;
-    pos.z =-10;
+    pos.z = -6;
 
 }
 

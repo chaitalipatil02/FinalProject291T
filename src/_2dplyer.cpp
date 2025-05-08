@@ -98,14 +98,14 @@ void _2DPlyer::ply2DActions()
               }
             break;
         case WALKBACK:
-            if(myTime->getTicks()>60)
-              {
+             if(myTime->getTicks()>60)
+             {
                 xMin +=1.0/frames.x;
                 xMax +=1.0/frames.x;
                 yMax = 4*1.0/frames.y;
                 yMin = yMax - 1.0/frames.y;
-                 myTime->reset();
-              }
-            break;
+                myTime->reset();
+             }
+             break;
     }
 }

@@ -21,20 +21,19 @@ void _parallax::drawBkgrnd(float width, float height)
 
     glBegin(GL_POLYGON);
 
-       glTexCoord2f(xMin,yMax);
-       glVertex3f(-width/height, -1,-10);
+        glTexCoord2f(xMin,yMax);
+        glVertex3f(-width/height, -1,-10);
 
-       glTexCoord2f(xMax,yMax);
-       glVertex3f(width/height, -1,-10);
+        glTexCoord2f(xMax,yMax);
+        glVertex3f(width/height, -1,-10);
 
-              glTexCoord2f(xMax,yMin);
-       glVertex3f(width/height, 1,-10);
+        glTexCoord2f(xMax,yMin);
+        glVertex3f(width/height, 1,-10);
 
-              glTexCoord2f(xMin,yMin);
-       glVertex3f(-width/height, 1,-10);
+        glTexCoord2f(xMin,yMin);
+        glVertex3f(-width/height, 1,-10);
 
     glEnd();
-
 }
 
 void _parallax::parallaxInit(char* fileName)

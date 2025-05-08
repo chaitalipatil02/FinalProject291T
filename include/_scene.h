@@ -2,6 +2,7 @@
 #define _SCENE_H
 
 #include<_common.h>
+#include<_bullets.h>
 
 class _scene
 {
@@ -13,6 +14,7 @@ class _scene
         GLint IniGL();                                    //initialization
         GLvoid renderScene();                              // Draw Scene
         GLvoid renderLevelOne();
+        GLvoid renderLevelTwo();
 
         int winMsg(HWND	hWnd,			// Handle For This Window
                    UINT	uMsg,			// Message For This Window
@@ -20,6 +22,9 @@ class _scene
                    LPARAM	lParam);
 
          vec2 dim;
+         vec3 playerPositions[15];
+         _bullets bullets[10]; // max 10 bullets at once
+
 
          float playerPosX, playerPosZ, playerAngleY;
 
@@ -46,6 +51,8 @@ class _scene
          float noX, noY, noW, noH;
          float newGameX, newGameY, newGameW, newGameH;
          float crossX, crossY, crossW, crossH;
+         float moveTimer, moveInterval;
+
 
          int lastMouseX, lastMouseY;
 
@@ -61,6 +68,8 @@ class _scene
          bool firstPerson = true;
          bool inGameScene, exitInit;
          bool inLandingScene, inMenuScene, inHelpScene, inInfoScene, inCreditScene, inExitScene, inNewGame, inCross, isShooting;
+         bool isLevelTwo, useLevelTwoTextures;      // Skybox for level two
+         bool playerFacingLeft[15];  // true = facing left, false = facing right
 
     protected:
 
