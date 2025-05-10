@@ -31,6 +31,10 @@ class _scene
          Bullet bullets[10]; // max 10 bullets at once
 
 
+         bool isFalling[15];     // Add in _scene.h
+            int fallFramesLeft[15]; // Frames left to play fall animation
+
+
          float playerPosX, playerPosZ, playerAngleY;
 
           // Functions to draw individual screen scenes
@@ -57,6 +61,7 @@ class _scene
          float newGameX, newGameY, newGameW, newGameH;
          float crossX, crossY, crossW, crossH;
          float moveTimer, moveInterval;
+         float cameraPitch;
 
 
          int lastMouseX, lastMouseY;
