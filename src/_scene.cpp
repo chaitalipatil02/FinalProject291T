@@ -9,6 +9,7 @@
 #include <_3dmodelloader.h>
 #include <_ufo.h>
 #include <_sounds.h>
+#include <_walls.h>
 
 bool useLevelTwoTextures = false;
 
@@ -29,6 +30,15 @@ _parallax *info = new _parallax();
 _parallax *credits = new _parallax();
 _parallax *exits = new _parallax();
 _sounds *snds = new _sounds();
+_walls *wall = new _walls();
+
+typedef struct{
+    float time;
+    float rot;
+    bool fwd;
+}plyDir;
+
+plyDir playerRot = {120,0,true};
 
 enum Scenes
 {
@@ -63,6 +73,7 @@ _scene::_scene()
     isShooting = false;
     isLevelTwo = false;
     useLevelTwoTextures = false;
+    cameraPitch = 0.0;
     moveTimer = 0.0;
 
     for (int i = 0; i < 15; i++) {
@@ -76,11 +87,20 @@ _scene::_scene()
     }
 
     for (int i = 0; i < 15; i++) {
-        if (i % 2 == 0)
-            playerFacingLeft[i] = true;  // half face left
-        else
-            playerFacingLeft[i] = false; // half face right
+    playerFacingLeft[i] = rand() % 2; // Randomly true or false
+}
+
+
+    for (int i = 0; i < 15; i++) {
+        playerVisible[i] = true;  // Initially all players are visible
     }
+
+    for (int i = 0; i < 15; i++) {
+    isFalling[i] = false;
+    fallFramesLeft[i] = 0;
+}
+
+
 }
 
 _scene::~_scene()
@@ -115,10 +135,11 @@ GLint _scene::IniGL()
     myLight->setupLight(GL_LIGHT0);
     myModel->initModel("images/sun.jpg");
     prlx->parallaxInit("images/landing.png");
-    ply2D->ply2Dinit("images/ali.png",6,4);
+    ply2D->ply2Dinit("images/char.png",8,9);
     mdl3D->initModel("images/models/aliensoldier/tris.md2");
     mdl3DW->initModel("images/models/aliensoldier/weapon.md2");
     ufo->initUFO("images/sun.jpg");
+    wall->wallsInit("images/wall.jpg");
 
 
     menu->parallaxInit("images/newgamefp.png");
@@ -254,6 +275,28 @@ GLvoid _scene::renderScene()
 
 GLvoid _scene::renderLevelOne()
 {
+
+    int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
+
+
+        if (playerRot.rot > 0) {
+            playerAngleY += (playerRot.fwd ? 0.1 : -0.1);
+            playerRot.rot -= 0.1;
+            playerRot.time += 0.1;
+        } else {
+            if (playerRot.fwd){
+                if (playerRot.time <= 0){
+                    playerRot.rot = 180;
+                    playerRot.fwd = false;
+                } else {
+                    playerRot.time -= 0.1;
+                }
+            } else {
+                if (playerRot.time < 20)
+                    playerRot.time += 0.1;
+            }
+        }
+
     // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
         float lookX = cos(angleRad);
@@ -279,37 +322,67 @@ GLvoid _scene::renderLevelOne()
 
         if (moveTimer >= moveInterval) {
             for (int i = 0; i < 15; i++) {
-                if (playerFacingLeft[i]) {
-                    playerPositions[i].x -= 0.001;
-                } else {
-                    playerPositions[i].x += 0.001;
-                }
+                playerPositions[i].x += 0.001 * movementDirection[i];
             }
             moveTimer = 0.0f;
         }
 
         // Draw players
         for (int i = 0; i < 15; i++) {
+            if (!playerVisible[i]) continue;
+
             glPushMatrix();
             glTranslatef(playerPositions[i].x, playerPositions[i].y, playerPositions[i].z);
-            glScalef(3.33, 3.33, 3.33);
-            glDisable(GL_LIGHTING);
-            glEnable(GL_TEXTURE_2D);
+            glScalef(0.1, 0.1, 0.1);
+            // Common X-axis rotation to stand upright
+        glRotatef(-90, 1, 0, 0);
 
+        // Rotate around Z to face left or right
+        if (playerFacingLeft[i]) {
+            glRotatef(180, 0, 0, 1); // Flip to face left
+        } else {
+            glRotatef(0, 0, 0, 1);   // Default (face right)
+        }
+
+
+
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+
+    float speed = 0.002f;  // Adjust speed as needed
+
+        if (isFalling[i]) {
+            mdl3D->actionTrigger = _3dmodelloader::FALL;
+            fallFramesLeft[i]--;
+            if (fallFramesLeft[i] <= 0) {
+                playerVisible[i] = false;
+                isFalling[i] = false;
+            }
+        } else {
+            // Move left or right
             if (playerFacingLeft[i]) {
-                glScalef(-1.0, 1.0, 1.0);  // Flip to face left
-                ply2D->actiontrigger = ply2D->WALKLEFT;
+                playerPositions[i].x -= speed;
             } else {
-                ply2D->actiontrigger = ply2D->WALKRIGHT;
+                playerPositions[i].x += speed;
             }
 
-            ply2D->ply2DActions();
-            ply2D->drawPly2D();
+            // Occasionally change direction randomly
+            if (rand() % 200 == 0) {  // 1 in 200 frames (roughly)
+                playerFacingLeft[i] = !playerFacingLeft[i];
+            }
 
-            glDisable(GL_TEXTURE_2D);
-            glEnable(GL_LIGHTING);
-            glPopMatrix();
+            mdl3D->actionTrigger = _3dmodelloader::RUN;
         }
+
+
+    mdl3D->actions();
+    mdl3D->Draw();
+
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+    glPopMatrix();
+}
+
 
 
         glPushMatrix();         // Draw weapon model at player's side
@@ -331,36 +404,78 @@ GLvoid _scene::renderLevelOne()
             mdl3DW->Draw();
         glPopMatrix();
 
-        // Update and draw bullets
         for (int i = 0; i < 10; i++) {
-            if (bullets[i].active) {
-                // Move bullet
-                bullets[i].x += bullets[i].dirX * 1.0;
-                bullets[i].y += bullets[i].dirY * 1.0;
-                bullets[i].z += bullets[i].dirZ * 1.0;
+    if (bullets[i].active) {
+        // Move bullet
+        bullets[i].x += bullets[i].dirX * 1.0;
+        bullets[i].y += bullets[i].dirY * 1.0;
+        bullets[i].z += bullets[i].dirZ * 1.0;
 
-                // Draw bullet
-                glPushMatrix();
-                    glDisable(GL_LIGHTING);
-                    glColor3f(1, 0, 0); // Red bullet
-                    glTranslatef(bullets[i].x, bullets[i].y, bullets[i].z);
-                    glutSolidSphere(0.2, 8, 8); // Small sphere bullet
-                    glEnable(GL_LIGHTING);
-                glPopMatrix();
+        // Draw bullet
+        glPushMatrix();
+            glDisable(GL_LIGHTING);
+            glColor3f(1, 0, 0);
+            glTranslatef(bullets[i].x, bullets[i].y, bullets[i].z);
+            glutSolidSphere(0.1, 8, 8);
+            glEnable(GL_LIGHTING);
+        glPopMatrix();
 
-                // Deactivate if out of bounds
-                if (bullets[i].x > 200 || bullets[i].x < -200 ||
-                    bullets[i].z > 200 || bullets[i].z < -200 ||
-                    bullets[i].y > 200 || bullets[i].y < -10) {
-                    bullets[i].active = false;
-                }
-            }
+        // Check bullet collision with players
+        for (int j = 0; j < 15; j++) {
+            if (!playerVisible[j]) continue;
+
+            float dx = bullets[i].x - playerPositions[j].x;
+            float dy = bullets[i].y - playerPositions[j].y;
+            float dz = bullets[i].z - playerPositions[j].z;
+            float distance = sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (distance < 2.0f) {
+    isFalling[j] = true;
+    fallFramesLeft[j] = 30; // Let’s say ~30 frames for fall animation
+    bullets[i].active = false;
+    break;
+}
+
+
+
         }
+
+        snds->PlaySoundA("sounds/squid-game-gunshot.mp3");
+        // Deactivate if out of bounds
+        if (bullets[i].x > 200 || bullets[i].x < -200 ||
+            bullets[i].z > 200 || bullets[i].z < -200 ||
+            bullets[i].y > 200 || bullets[i].y < -10) {
+            bullets[i].active = false;
+        }
+    }
+}
 
 }
 
 GLvoid _scene::renderLevelTwo()
 {
+
+    int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
+
+
+        if (playerRot.rot > 0) {
+            playerAngleY += 0.1;
+            playerRot.rot -= 0.1;
+            playerRot.time += 0.1;
+        } else {
+            if (playerRot.fwd){
+                if (playerRot.time <= 0){
+                    playerRot.rot = 180;
+                    playerRot.fwd = false;
+                } else {
+                    playerRot.time -= 0.1;
+                }
+            } else {
+                if (playerRot.time < 20)
+                    playerRot.time += 0.1;
+            }
+        }
+
     // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
         float lookX = cos(angleRad);
@@ -381,15 +496,71 @@ GLvoid _scene::renderLevelTwo()
             glEnable(GL_LIGHTING);
         glPopMatrix();
 
-        glPushMatrix();
-            glTranslatef(0.0, 0.0, 0.0);
-            glDisable(GL_LIGHTING);
-            glEnable(GL_TEXTURE_2D);
-            ply2D->ply2DActions();
-            ply2D->drawPly2D();
-            glDisable(GL_TEXTURE_2D);
-            glEnable(GL_LIGHTING);
-        glPopMatrix();
+        // Timer to move players
+        moveTimer += 0.0000000000000016;
+
+        if (moveTimer >= moveInterval) {
+            for (int i = 0; i < 15; i++) {
+                playerPositions[i].x += 0.001 * movementDirection[i];
+            }
+            moveTimer = 0.0f;
+        }
+
+        // Draw players
+        for (int i = 0; i < 15; i++) {
+    if (!playerVisible[i]) continue;
+
+    glPushMatrix();
+    glTranslatef(playerPositions[i].x, playerPositions[i].y, playerPositions[i].z);
+    glScalef(0.1, 0.1, 0.1);
+    // Common X-axis rotation to stand upright
+glRotatef(-90, 1, 0, 0);
+
+// Rotate around Z to face left or right
+if (playerFacingLeft[i]) {
+    glRotatef(180, 0, 0, 1); // Flip to face left
+} else {
+    glRotatef(0, 0, 0, 1);   // Default (face right)
+}
+
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+
+    float speed = 0.002f;  // Adjust speed as needed
+
+        if (isFalling[i]) {
+            mdl3D->actionTrigger = _3dmodelloader::FALL;
+            fallFramesLeft[i]--;
+            if (fallFramesLeft[i] <= 0) {
+                playerVisible[i] = false;
+                isFalling[i] = false;
+            }
+        } else {
+            // Move left or right
+            if (playerFacingLeft[i]) {
+                playerPositions[i].x -= speed;
+            } else {
+                playerPositions[i].x += speed;
+            }
+
+            // Occasionally change direction randomly
+            if (rand() % 200 == 0) {  // 1 in 200 frames (roughly)
+                playerFacingLeft[i] = !playerFacingLeft[i];
+            }
+
+            mdl3D->actionTrigger = _3dmodelloader::RUN;
+        }
+
+
+    mdl3D->actions();
+    mdl3D->Draw();
+
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+    glPopMatrix();
+}
+
+
 
         glPushMatrix();         // Draw weapon model at player's side
             // Calculate right vector based on player angle
@@ -397,7 +568,7 @@ GLvoid _scene::renderLevelTwo()
             float rightX = cos(angleRad);
             float rightZ = -sin(angleRad);
 
-            float weaponOffset = 5.5;
+            float weaponOffset = -1.0;
 
             glTranslatef(
                 playerPosX + rightX * weaponOffset,
@@ -410,22 +581,71 @@ GLvoid _scene::renderLevelTwo()
             mdl3DW->Draw();
         glPopMatrix();
 
-        if (showLaser)          // Draw red laser cube shot when space key pressed
-        {
-            float endX = playerPosX + 20.0 * cos(angleRad);
-            float endY = 1.7;
-            float endZ = playerPosZ + 20.0 * sin(angleRad);
+        for (int i = 0; i < 10; i++) {
+    if (bullets[i].active) {
+        // Move bullet
+        bullets[i].x += bullets[i].dirX * 1.0;
+        bullets[i].y += bullets[i].dirY * 1.0;
+        bullets[i].z += bullets[i].dirZ * 1.0;
 
-            glPushMatrix();
-                glDisable(GL_LIGHTING);
-                glDisable(GL_TEXTURE_2D);
-                glTranslatef(endX, endY, endZ-3);
-                glColor3f(1, 0, 0);
-                glutSolidCube(0.4);
-                glEnable(GL_TEXTURE_2D);
-                glEnable(GL_LIGHTING);
-            glPopMatrix();
+        // Draw bullet
+        glPushMatrix();
+            glDisable(GL_LIGHTING);
+            glColor3f(1, 0, 0);
+            glTranslatef(bullets[i].x, bullets[i].y, bullets[i].z);
+            glutSolidSphere(0.2, 8, 8);
+            glEnable(GL_LIGHTING);
+        glPopMatrix();
+
+        // Check bullet collision with players
+        for (int j = 0; j < 15; j++) {
+            if (!playerVisible[j]) continue;
+
+            float dx = bullets[i].x - playerPositions[j].x;
+            float dy = bullets[i].y - playerPositions[j].y;
+            float dz = bullets[i].z - playerPositions[j].z;
+            float distance = sqrt(dx*dx + dy*dy + dz*dz);
+
+            if (distance < 2.0f) {
+    isFalling[j] = true;
+    fallFramesLeft[j] = 30; // Let’s say ~30 frames for fall animation
+    bullets[i].active = false;
+    break;
+}
+
+
+
         }
+
+        snds->PlaySoundA("sounds/squid-game-gunshot.mp3");
+        // Deactivate if out of bounds
+        if (bullets[i].x > 200 || bullets[i].x < -200 ||
+            bullets[i].z > 200 || bullets[i].z < -200 ||
+            bullets[i].y > 200 || bullets[i].y < -10) {
+            bullets[i].active = false;
+        }
+    }
+}
+
+        glPushMatrix();
+            glDisable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);
+            wall->updateMovement();
+            wall->draw(-17,-3,105,15,10,1);
+            glDisable(GL_TEXTURE_2D);
+            glEnable(GL_LIGHTING);
+        glPopMatrix();
+
+        glPushMatrix();
+            glDisable(GL_LIGHTING);
+            glEnable(GL_TEXTURE_2D);
+            wall->updateMovement();
+            wall->draw(0,-3,65,15,10,1);
+            glDisable(GL_TEXTURE_2D);
+            glEnable(GL_LIGHTING);
+        glPopMatrix();
+
+
 }
 
 
@@ -592,6 +812,26 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             float forwardZ = sin(angleRad);
             float rightX = sin(angleRad);
             float rightZ = -cos(angleRad);
+
+            if (playerRot.rot <= 0) {
+                switch (wParam)
+                {
+                    case 'A':
+                        if (playerRot.fwd) {
+                            playerRot.rot = 180;
+                            playerRot.time += 5;
+                            playerRot.fwd = false;
+                        }
+                        break;
+                    case 'D':
+                         if (!playerRot.fwd && playerRot.time > 5) {
+                                cout << "twist" << endl;
+                            playerRot.rot = 180;
+                            playerRot.fwd = true;
+                         }
+                         break;
+                }
+            }
 
             /*switch (wParam)
             {
@@ -802,7 +1042,6 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 break;
             }
         }
-
     }
     mouseDragging = true;
     lastMouseX = LOWORD(lParam);
@@ -840,11 +1079,16 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             int dx = mouseX - lastMouseX;
             int dy = mouseY - lastMouseY;
 
-            playerAngleY += dx * 0.03;  // Rotate player horizontally
+            playerAngleY += dx * 0.03f;     // Yaw
+            cameraPitch  -= dy * 0.03f;     // Pitch (inverted Y-axis)
 
             // Clamp Y to avoid flipping
             if (cam->cameraAngleY > 89.0) cam->cameraAngleY = 89.0;
             if (cam->cameraAngleY < -89.0) cam->cameraAngleY = -89.0;
+
+            if (cameraPitch > 89.0f) cameraPitch = 89.0f;
+            if (cameraPitch < -89.0f) cameraPitch = -89.0f;
+
 
             lastMouseX = mouseX;
             lastMouseY = mouseY;

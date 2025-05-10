@@ -295,6 +295,7 @@ void _3dmodelloader::actions()
         case RUN:StartFrame=40; EndFrame = 45;break;
         case ATTACK:StartFrame=46; EndFrame = 53; break;
         case JUMP:StartFrame=66; EndFrame = 71; break;
+        case FALL:StartFrame=78; EndFrame = 85; break;
 
     }
 }

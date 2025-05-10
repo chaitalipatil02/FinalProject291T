@@ -83,8 +83,8 @@ void _inputs::keyPressed(_skyBox* sky)
         case VK_F3:
             sky->pos.z -=1.0;
             break;
-    }
 
+        }
 }
 void _inputs::keyPressed(_2DPlyer* ply)
 {
@@ -128,7 +128,7 @@ void _inputs::keyPressed(_3dmodelloader* ply,_3dmodelloader* W )
              break;
 
         default:
-            W->actionTrigger=ply->actionTrigger=ply->STAND;  break;
+            W->actionTrigger=ply->actionTrigger=ply->RUN;  break;
     }
 
 
@@ -168,6 +168,17 @@ void _inputs::keyPressed(_camera* cm)
         case 75: cm->rotAngle.x +=1;cm->rotationXY(); break;
         case 76: cm->rotAngle.y +=1;cm->rotationXY(); break;
     }
+}
+
+void _inputs::keyPressed(_sounds* snds, char* fileName)
+{
+    switch(wParam)
+   {
+       case VK_SPACE:
+           snds->PlaySoundA(fileName);
+            break;
+   }
+
 }
 
 void _inputs::keyUp()
