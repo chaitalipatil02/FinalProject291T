@@ -14,12 +14,12 @@ _skyBox::~_skyBox()
 void _skyBox::skyBoxInit()
 {
     glGenTextures(6,levelOneTextures);
-    levelOneTextures[0] = textures->loadImages("images/1side.png");
-    levelOneTextures[1] = textures->loadImages("images/side.jpg");
-    levelOneTextures[2] = textures->loadImages("images/side.jpg");
+    levelOneTextures[0] = textures->loadImages("images/squid.jpg");
+    levelOneTextures[1] = textures->loadImages("images/squid.jpg");
+    levelOneTextures[2] = textures->loadImages("images/squidsky.jpg");
     levelOneTextures[3] = textures->loadImages("images/astro.png");
-    levelOneTextures[4] = textures->loadImages("images/side.jpg");
-    levelOneTextures[5] = textures->loadImages("images/side.jpg");
+    levelOneTextures[4] = textures->loadImages("images/squid.jpg");
+    levelOneTextures[5] = textures->loadImages("images/squid.jpg");
 
     xMin = yMin = 0.0;
     xMax = yMax = 1.0;

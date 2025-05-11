@@ -27,10 +27,10 @@ void _parallax::drawBkgrnd(float width, float height)
        glTexCoord2f(xMax,yMax);
        glVertex3f(width/height, -1,-10);
 
-              glTexCoord2f(xMax,yMin);
+       glTexCoord2f(xMax,yMin);
        glVertex3f(width/height, 1,-10);
 
-              glTexCoord2f(xMin,yMin);
+       glTexCoord2f(xMin,yMin);
        glVertex3f(-width/height, 1,-10);
 
     glEnd();
