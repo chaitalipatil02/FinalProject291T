@@ -14,7 +14,7 @@ _skyBox::~_skyBox()
 void _skyBox::skyBoxInit()
 {
     glGenTextures(6,levelOneTextures);
-    levelOneTextures[0] = textures->loadImages("images/squid.png");
+    levelOneTextures[0] = textures->loadImages("images/squid.jpg");
     levelOneTextures[1] = textures->loadImages("images/squid.jpg");
     levelOneTextures[2] = textures->loadImages("images/squidsky.jpg");
     levelOneTextures[3] = textures->loadImages("images/astro.png");

@@ -128,7 +128,7 @@ void _inputs::keyPressed(_3dmodelloader* ply,_3dmodelloader* W )
              break;
 
         default:
-            W->actionTrigger=ply->actionTrigger=ply->STAND;  break;
+            W->actionTrigger=ply->actionTrigger=ply->RUN;  break;
     }
 
 

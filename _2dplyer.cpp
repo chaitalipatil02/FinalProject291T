@@ -91,7 +91,7 @@ void _2DPlyer::ply2DActions()
     }
 
     // Animation: Move to next frame every 60 ms
-    if (myTime->getTicks() > 60)
+    if (myTime->getTicks() > 150)
     {
         currentFrame++;
         if (currentFrame >= numCols)
