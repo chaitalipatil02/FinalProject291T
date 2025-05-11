@@ -9,6 +9,7 @@
 #include <_camera.h>
 #include<_3dmodelloader.h>
 #include<_scene.h>
+#include<_sounds.h>
 
 
 
@@ -27,6 +28,7 @@ class _inputs
         void keyPressed(_3dmodelloader *,_3dmodelloader * );
         void keyPressed(_camera *);
         void keyPressed(_scene *);
+        void keyPressed(_sounds *, char *);
 
 
         void mouseEventDown(_model*, double,double);

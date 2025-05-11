@@ -20,6 +20,7 @@ class _scene
         GLvoid renderScene();                              // Draw Scene
         GLvoid renderLevelOne();
         GLvoid renderLevelTwo();
+        GLvoid renderLevelThree();
 
         int winMsg(HWND	hWnd,			// Handle For This Window
                    UINT	uMsg,			// Message For This Window
@@ -29,6 +30,10 @@ class _scene
          vec2 dim;
          vec3 playerPositions[15];
          Bullet bullets[10]; // max 10 bullets at once
+
+
+         bool isFalling[15];     // Add in _scene.h
+            int fallFramesLeft[15]; // Frames left to play fall animation
 
 
          float playerPosX, playerPosZ, playerAngleY;
@@ -57,6 +62,9 @@ class _scene
          float newGameX, newGameY, newGameW, newGameH;
          float crossX, crossY, crossW, crossH;
          float moveTimer, moveInterval;
+         float cameraPitch;
+         int columns;
+         float spacingX, spacingZ, startplyX, startplyZ;
 
 
          int lastMouseX, lastMouseY;
@@ -75,6 +83,24 @@ class _scene
          bool inLandingScene, inMenuScene, inHelpScene, inInfoScene, inCreditScene, inExitScene, inNewGame, inCross, isShooting;
          bool isLevelTwo, useLevelTwoTextures;      // Skybox for level two
          bool playerFacingLeft[15];  // true = facing left, false = facing right
+         bool playerVisible[15];
+         bool isLevelThree;
+
+         bool q1pop = false;
+         bool q1answer = false;
+         int correctOption = 2;         // C is correct (0=A, 1=B, 2=C, 3=
+         int attempts = 0;
+
+         int killCount;
+         float killTextTimer = 0.0;
+         float gameTimer = 45.0;
+         bool timerStarted = false;
+         float lastTime = 0.0;
+         bool levelComplete = false;
+
+
+
+
 
     protected:
 

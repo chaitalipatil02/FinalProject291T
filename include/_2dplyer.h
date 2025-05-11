@@ -30,6 +30,15 @@ class _2DPlyer
         void ply2Dinit(char *,int,int);
         void drawPly2D();
         void ply2DActions();
+        float walkspeed;    // Speed of player movement
+
+        int numCols, numRows; // number of frames horizontally and vertically
+        int currentFrame;     // which frame is active
+        int startFrame;       // start frame for this animation (like for WALKLEFT etc.)
+        int endFrame;         // end frame for this animation
+        int animRow;          // which row (Y) to use: WALKLEFT is row 1, WALKRIGHT is row 2, etc.
+
+        float u0, v0, u1, v1;
 
     protected:
 

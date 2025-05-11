@@ -12,7 +12,8 @@ class _skyBox
 
         _textureLoader *textures=new _textureLoader();
 
-        GLuint tex[6];
+        GLuint levelOneTextures[6];
+        GLuint levelTwoTextures[6];
 
         vec3 pos;   //  for the translations
         vec3 rot;   //  for rotations
@@ -21,6 +22,7 @@ class _skyBox
         float xMin,yMin,xMax,yMax;
 
         void skyBoxInit();
+        void skyBoxInit2();
         void drawSkyBox();
 
     protected:
