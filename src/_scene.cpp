@@ -34,6 +34,7 @@ _walls *wall1 = new _walls();
 _walls *wall2 = new _walls();
 _walls *wall3 = new _walls();
 _parallax *q1 = new _parallax();
+_parallax *gameOverScreen = new _parallax();
 
 typedef struct{
     float time;
@@ -85,6 +86,8 @@ _scene::_scene()
     startplyZ = 60.0;
     isLevelThree = false;
     killCount = 0;
+    gameOver = false;
+    gameOverTimer = 0.0;
 
     for (int i = 0; i < 15; i++) {
         int row = i / columns;
@@ -108,11 +111,9 @@ _scene::_scene()
     }
 
     for (int i = 0; i < 15; i++) {
-    isFalling[i] = false;
-    fallFramesLeft[i] = 0;
-}
-
-
+        isFalling[i] = false;
+        fallFramesLeft[i] = 0;
+    }
 }
 
 _scene::~_scene()
@@ -156,6 +157,7 @@ GLint _scene::IniGL()
     wall3->wallsInit("images/wall.jpg");
 
     q1->parallaxInit("images/q1.png");
+    gameOverScreen->parallaxInit("images/gameover.jpg");
 
     // Set custom movement bounds and positions
     wall1->wallPosX = -17.0;
@@ -204,6 +206,7 @@ GLvoid _scene::renderScene()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
+
     static bool menuInitialized = false;
 
     if (inLandingScene)     // Draw landing scene
@@ -308,21 +311,37 @@ GLvoid _scene::renderScene()
         else
             renderLevelOne();
     }
+    else if (!inLandingScene && !inMenuScene && !inHelpScene && !inInfoScene &&
+    !inCreditScene && !inExitScene && !inNewGame && !inCross && !isInGameScene()) {
+        inLandingScene = true;  // Force return to landing screen
+    }
+
 }
 
 GLvoid _scene::renderLevelOne()
 {
-
-    int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
-
     float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f; // Convert ms to seconds
     float deltaTime = currentTime - lastTime;
     lastTime = currentTime;
 
+    if(!gameOver){
+        if (currentTime - lastAutoTurnTime > 4.0) {
+            if (!playerRot.fwd && playerRot.time > 5) {
+                playerRot.rot = -180;
+                playerRot.fwd = true;  // Turn forward automatically
+                lastAutoTurnTime = currentTime;
+            }
+        }
+    }
+
+
+    int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
+
     if (!levelComplete && !q1pop) {
         gameTimer -= deltaTime;
-        if (gameTimer <= 0) {
-            gameTimer = 0;
+        if (gameTimer <= 0 && killCount < 10) {
+            gameOver = true;
+            gameOverTimer = 5.0;
         }
 
         if (killCount >= 10 && gameTimer > 0) {
@@ -333,6 +352,9 @@ GLvoid _scene::renderLevelOne()
             levelComplete = true;
         }
     }
+
+    if(!gameOver)
+    {
         if (playerRot.rot > 0) {
             playerAngleY += (playerRot.fwd ? 0.1 : -0.1);
             playerRot.rot -= 0.1;
@@ -350,6 +372,7 @@ GLvoid _scene::renderLevelOne()
                     playerRot.time += 0.1;
             }
         }
+    }
 
     // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
@@ -375,12 +398,15 @@ GLvoid _scene::renderLevelOne()
         // Timer to move players
         moveTimer += 0.0000000000000016;
 
-        if (moveTimer >= moveInterval) {
-            for (int i = 0; i < 15; i++) {
-                playerPositions[i].x += 0.001 * movementDirection[i];
+        if (!gameOver){
+            if (moveTimer >= moveInterval) {
+                for (int i = 0; i < 15; i++) {
+                    playerPositions[i].x += 0.001 * movementDirection[i];
+                }
+                moveTimer = 0.0f;
             }
-            moveTimer = 0.0f;
         }
+
 
         // Draw players
         for (int i = 0; i < 15; i++) {
@@ -429,14 +455,12 @@ GLvoid _scene::renderLevelOne()
 
 
                 mdl3D->actions();
-                mdl3D->Draw();
+                if(!gameOver) mdl3D->Draw();
 
                 glDisable(GL_TEXTURE_2D);
                 glEnable(GL_LIGHTING);
             glPopMatrix();
         }
-
-
 
         glPushMatrix();         // Draw weapon model at player's side
             // Calculate right vector based on player angle
@@ -453,7 +477,7 @@ GLvoid _scene::renderLevelOne()
             );
             glRotatef(-playerAngleY, 0.0, 1.0, 0.0);  // Rotate gun with mouse-dragged camera
             glScalef(0.1, 0.1, 0.1);
-            mdl3DW->actions();
+            if(!gameOver) mdl3DW->actions();
             mdl3DW->Draw();
         glPopMatrix();
 
@@ -500,6 +524,78 @@ GLvoid _scene::renderLevelOne()
                     bullets[i].active = false;
                 }
             }
+        }
+
+        // Freeze everything during Game Over popup
+        if (showGameOverScreen) {
+            gameOverDisplayTimer -= deltaTime;
+            gameOver = true;
+
+            glPushMatrix();
+                glTranslatef(9.0,3.0,110.0);
+                glScalef(3.25, 3.25, 1.0);
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+                gameOverScreen->drawBkgrnd(dim.x, dim.y);  // shows gameover.jpg
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+
+            if (gameOverDisplayTimer <= 0.0) {
+                showGameOverScreen = false;
+                gameOver = false;
+                gameOverDisplayTimer = 0.0;
+
+                if (gameOverDisplayTimer <= 0.0) {
+                    showGameOverScreen = false;
+                    gameOver = false;
+                    gameOverDisplayTimer = 0.0;
+
+                    // Reset scene flags
+                    inLandingScene = true;
+                    prlx->parallaxInit("images/landing.png");
+                    inMenuScene = false;
+                    inHelpScene = false;
+                    inInfoScene = false;
+                    inCreditScene = false;
+                    inExitScene = false;
+                    inNewGame = false;
+                    inCross = false;
+                    inGameScene = false;
+
+                    // Reset level states
+                    isLevelOne = false;
+                    isLevelTwo = false;
+                    isLevelThree = false;
+                    levelComplete = false;
+                    levelTwoStarted = false;
+                    levelThreeStarted = false;
+
+                    // Reset game variables
+                    killCount = 0;
+                    gameTimer = 45.0f;
+                    q1pop = false;
+                    q1answer = false;
+
+                    for (int i = 0; i < 15; i++) {
+                        playerVisible[i] = true;
+                        isFalling[i] = false;
+                        fallFramesLeft[i] = 0;
+                    }
+
+                    for (int i = 0; i < 10; i++) {
+                        bullets[i].active = false;
+                    }
+
+                    // Reset player position
+                    playerPosX = 10.0;
+                    playerPosZ = 120.0;
+                    playerAngleY = -110.0;
+                }
+
+            }
+
+            return;  // <-- prevent everything else from running
         }
 
         if (killTextTimer > 0.0) {
@@ -578,16 +674,72 @@ GLvoid _scene::renderLevelOne()
             glPopMatrix(); // Projection
             glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
+
+        if (gameTimer <= 0 && killCount < 10) {
+            showGameOverScreen = true;
+            gameOverDisplayTimer = 10.0f;
+            //snds->PlaySoundA("sounds/gameover.mp3");
+        }
 }
 
 //==============================================
 
 GLvoid _scene::renderLevelTwo()
 {
+    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f; // Convert ms to seconds
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    if(!gameOver){
+        if (currentTime - lastAutoTurnTime > 4.0) {
+            if (!playerRot.fwd && playerRot.time > 5) {
+                playerRot.rot = -180;
+                playerRot.fwd = true;  // Turn forward automatically
+                lastAutoTurnTime = currentTime;
+            }
+        }
+    }
 
     int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
 
+    if (!levelComplete && !q1pop) {
+        gameTimer -= deltaTime;
+        if (gameTimer <= 0 && killCount < 10) {
+            gameOver = true;
+            gameOverTimer = 10.0;
+        }
 
+        if (killCount >= 10 && gameTimer > 0) {
+            // Advance to next level
+            isLevelThree = false;
+            isLevelTwo = true;
+            useLevelTwoTextures = true;
+            levelComplete = true;
+        }
+    }
+
+    if (!levelTwoStarted) {
+        killCount = 0;
+        killTextTimer = 0.0f;
+        gameTimer = 45.0; // reset the timer
+        levelTwoStarted = true;
+
+        // Reload new players for level two
+        for (int i = 0; i < 15; i++) {
+            playerVisible[i] = true;
+            isFalling[i] = false;
+            fallFramesLeft[i] = 0;
+
+            int row = i / columns;
+            int col = i % columns;
+            playerPositions[i].x = startplyX + col * spacingX;
+            playerPositions[i].y = 0.0f;
+            playerPositions[i].z = startplyZ + row * spacingZ;
+            playerFacingLeft[i] = rand() % 2;
+        }
+    }
+
+    if(!gameOver){
         if (playerRot.rot > 0) {
             playerAngleY += (playerRot.fwd ? 0.1 : -0.1);
             playerRot.rot -= 0.1;
@@ -605,6 +757,7 @@ GLvoid _scene::renderLevelTwo()
                     playerRot.time += 0.1;
             }
         }
+    }
 
     // Calculate forward direction based on player angle
         float angleRad = playerAngleY * PI / 180.0f;
@@ -617,6 +770,7 @@ GLvoid _scene::renderLevelTwo()
             playerPosX + lookX, 1.7, playerPosZ + lookZ,       // Look direction
             0.0, 1.0, 0.0                                   // Up vector
         );
+
         // Skybox, player
         glPushMatrix();                 // Draw skybox
             glTranslatef(0.0, 15.0, 0.0);
@@ -629,11 +783,13 @@ GLvoid _scene::renderLevelTwo()
         // Timer to move players
         moveTimer += 0.0000000000000016;
 
+        if(!gameOver){
         if (moveTimer >= moveInterval) {
             for (int i = 0; i < 15; i++) {
                 playerPositions[i].x += 0.001 * movementDirection[i];
             }
             moveTimer = 0.0f;
+        }
         }
 
         // Draw players
@@ -681,7 +837,7 @@ GLvoid _scene::renderLevelTwo()
                 }
 
                 mdl3D->actions();
-                mdl3D->Draw();
+                if (!gameOver) mdl3D->Draw();
 
                 glDisable(GL_TEXTURE_2D);
                 glEnable(GL_LIGHTING);
@@ -703,7 +859,7 @@ GLvoid _scene::renderLevelTwo()
             );
             glRotatef(-playerAngleY, 0.0, 1.0, 0.0);  // Rotate gun with mouse-dragged camera
             glScalef(0.1, 0.1, 0.1);
-            mdl3DW->actions();
+            if(!gameOver) mdl3DW->actions();
             mdl3DW->Draw();
         glPopMatrix();
 
@@ -733,10 +889,13 @@ GLvoid _scene::renderLevelTwo()
                     float dz = bullets[i].z - playerPositions[j].z;
                     float distance = sqrt(dx*dx + dy*dy + dz*dz);
 
-                    if (distance < 2.0f) {
+                    if (distance < 2.0) {
                         isFalling[j] = true;
                         fallFramesLeft[j] = 30; // Let’s say ~30 frames for fall animation
                         bullets[i].active = false;
+
+                        killCount++;
+                        killTextTimer = 2.0;
                         break;
                     }
                 }
@@ -751,7 +910,81 @@ GLvoid _scene::renderLevelTwo()
             }
         }
 
+        // Freeze everything during Game Over popup
+        if (showGameOverScreen) {
+            gameOverDisplayTimer -= deltaTime;
+            gameOver = true;
+
+            glPushMatrix();
+                glTranslatef(9.0,3.0,110.0);
+                glScalef(3.25, 3.25, 1.0);
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+                gameOverScreen->drawBkgrnd(dim.x, dim.y);  // shows gameover.jpg
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+
+            if (gameOverDisplayTimer <= 0.0) {
+                showGameOverScreen = false;
+                gameOver = false;
+                gameOverDisplayTimer = 0.0;
+
+                if (gameOverDisplayTimer <= 0.0) {
+                    snds->stopMusic();
+                    showGameOverScreen = false;
+                    gameOver = false;
+                    gameOverDisplayTimer = 0.0f;
+
+                    // Reset scene flags
+                    inLandingScene = true;
+                    prlx->parallaxInit("images/landing.png");
+                    inMenuScene = false;
+                    inHelpScene = false;
+                    inInfoScene = false;
+                    inCreditScene = false;
+                    inExitScene = false;
+                    inNewGame = false;
+                    inCross = false;
+                    inGameScene = false;
+
+                    // Reset level states
+                    isLevelOne = false;
+                    isLevelTwo = false;
+                    isLevelThree = false;
+                    levelComplete = false;
+                    levelTwoStarted = false;
+                    levelThreeStarted = false;
+
+                    // Reset game variables
+                    killCount = 0;
+                    gameTimer = 45.0f;
+                    q1pop = false;
+                    q1answer = false;
+
+                    for (int i = 0; i < 15; i++) {
+                        playerVisible[i] = true;
+                        isFalling[i] = false;
+                        fallFramesLeft[i] = 0;
+                    }
+
+                    for (int i = 0; i < 10; i++) {
+                        bullets[i].active = false;
+                    }
+
+                    // Reset player position
+                    playerPosX = 10.0;
+                    playerPosZ = 120.0;
+                    playerAngleY = -110.0;
+                }
+
+            }
+
+            return;  // <-- prevent everything else from running
+        }
+
         // --- Wall 1 ---
+        if(!gameOver){
         wall1->updateMovement();
         glPushMatrix();
             glDisable(GL_LIGHTING);
@@ -780,6 +1013,91 @@ GLvoid _scene::renderLevelTwo()
             glDisable(GL_TEXTURE_2D);
             glEnable(GL_LIGHTING);
         glPopMatrix();
+        }
+
+        if (killTextTimer > 0.0) {
+            glPushMatrix();
+                glMatrixMode(GL_PROJECTION);
+                glPushMatrix();
+                glLoadIdentity();
+                glOrtho(0, dim.x, dim.y, 0, -1, 1);
+                glMatrixMode(GL_MODELVIEW);
+                glPushMatrix();
+                glLoadIdentity();
+
+                glDisable(GL_LIGHTING);
+
+                // Background box
+                int boxX = dim.x / 2 - 120 + 11;
+                int boxY = dim.y / 2 - 30;
+                int boxWidth = 240;
+                int boxHeight = 50;
+
+                glColor4f(0.0f, 0.0f, 0.0f, 0.6f); // Semi-transparent black
+                glBegin(GL_QUADS);
+                    glVertex2i(boxX, boxY);
+                    glVertex2i(boxX + boxWidth, boxY);
+                    glVertex2i(boxX + boxWidth, boxY + boxHeight);
+                    glVertex2i(boxX, boxY + boxHeight);
+                glEnd();
+
+                glColor3f(1.0, 1.0, 1.0);
+                glRasterPos2i(dim.x / 2 - 50, dim.y / 2);
+                string message = to_string(killCount) + " Players Killed!";
+                for (int i = 0; message[i] != '\0'; i++) {
+                    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, message[i]);
+                }
+
+                glEnable(GL_LIGHTING);
+                glPopMatrix();
+                glMatrixMode(GL_PROJECTION);
+                glPopMatrix();
+                glMatrixMode(GL_MODELVIEW);
+            glPopMatrix();
+
+            killTextTimer -= 0.005;
+        }
+
+        if (killCount >= 10 && gameTimer > 0.0f) {
+            isLevelTwo = false;
+            isLevelThree = true;
+            // Optional: reset killCount if needed
+        }
+
+        // Show countdown timer on screen
+        glPushMatrix();
+            glMatrixMode(GL_PROJECTION);
+            glPushMatrix();
+            glLoadIdentity();
+            glOrtho(0, dim.x, dim.y, 0, -1, 1);  // Set 2D projection
+
+            glMatrixMode(GL_MODELVIEW);
+            glPushMatrix();
+            glLoadIdentity();
+
+            glDisable(GL_LIGHTING);
+            glColor3f(1.0f, 1.0f, 1.0f);  // White text
+            glRasterPos2i(20, 40);  // Top-left corner
+
+            string timerText = "Time Left: " + to_string((int)gameTimer) + "s";
+            for (char c : timerText) {
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+            }
+
+            glEnable(GL_LIGHTING);
+
+            glPopMatrix(); // ModelView
+            glMatrixMode(GL_PROJECTION);
+            glPopMatrix(); // Projection
+            glMatrixMode(GL_MODELVIEW);
+        glPopMatrix();
+
+        if (gameTimer <= 0 && killCount < 10) {
+            showGameOverScreen = true;
+            gameOverDisplayTimer = 10.0f;
+            //snds->PlaySoundA("sounds/gameover.mp3");
+        }
+
 }
 
 //==============================================Level3
@@ -787,9 +1105,67 @@ GLvoid _scene::renderLevelTwo()
 GLvoid _scene::renderLevelThree()
 {
 
+    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f; // Convert ms to seconds
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    if(!gameOver){
+        if (currentTime - lastAutoTurnTime > 4.0) {
+            if (!playerRot.fwd && playerRot.time > 5) {
+                playerRot.rot = -180;
+                playerRot.fwd = true;  // Turn forward automatically
+                lastAutoTurnTime = currentTime;
+            }
+        }
+    }
+
     int movementDirection[15] = {1, -1, 1, -1, -1, 1, -1, -1, 1, -1, -1, 1, 1, -1, 1};
 
-    if (q1pop) {
+    if (!levelComplete && !q1pop) {
+        gameTimer -= deltaTime;
+        if (gameTimer <= 0 && killCount < 10) {
+            gameOver = true;
+            gameOverTimer = 45.0;
+            showGameOverScreen = true;
+            gameOverDisplayTimer = 10.0f;
+        }
+
+        if (killCount >= 10 && gameTimer > 0) {
+            // Advance to next level
+            isLevelThree = false;
+            isLevelTwo = true;
+            useLevelTwoTextures = true;
+            levelComplete = true;
+        }
+    }
+
+    if (!levelThreeStarted) {
+        q1pop = true;              // Show popup on level start
+        killCount = 0;
+        killTextTimer = 0.0f;
+        gameTimer = 45.0; // reset the timer
+        levelThreeStarted = true;  // Ensure it happens only once
+
+        // Optional reset logic for players if needed:
+        for (int i = 0; i < 15; i++) {
+            playerVisible[i] = true;
+            isFalling[i] = false;
+            fallFramesLeft[i] = 0;
+
+            int row = i / columns;
+            int col = i % columns;
+            playerPositions[i].x = startplyX + col * spacingX;
+            playerPositions[i].y = 0.0f;
+            playerPositions[i].z = startplyZ + row * spacingZ;
+            playerFacingLeft[i] = rand() % 2;
+        }
+
+        // Optional: reset any kill/game counters for Level 3
+        killCount = 0;
+        killTextTimer = 0.0f;
+    }
+
+    if (q1pop && !gameOver) {
         glPushMatrix();
             glScalef(1.25, 1.25, 1.0);
             glDisable(GL_LIGHTING);
@@ -801,7 +1177,7 @@ GLvoid _scene::renderLevelThree()
     }
 
 
-    if(!q1pop)
+    if(!q1pop && !gameOver)
     {
         if (playerRot.rot > 0) {
             playerAngleY += (playerRot.fwd ? 0.1 : -0.1);
@@ -833,6 +1209,7 @@ GLvoid _scene::renderLevelThree()
             playerPosX + lookX, 1.7, playerPosZ + lookZ,       // Look direction
             0.0, 1.0, 0.0                                   // Up vector
         );
+
         // Skybox, player
         glPushMatrix();                 // Draw skybox
             glTranslatef(0.0, 15.0, 0.0);
@@ -843,7 +1220,7 @@ GLvoid _scene::renderLevelThree()
         glPopMatrix();
 
 
-        if(!q1pop)
+        if(!q1pop && !gameOver)
         {
             // Timer to move players
             moveTimer += 0.0000000000000016;
@@ -858,60 +1235,60 @@ GLvoid _scene::renderLevelThree()
 
         // Draw players
         for (int i = 0; i < 15; i++) {
-    if (!playerVisible[i]) continue;
+            if (!playerVisible[i]) continue;
 
-    glPushMatrix();
-        glTranslatef(playerPositions[i].x, playerPositions[i].y, playerPositions[i].z);
-        glScalef(0.1, 0.1, 0.1);
-        // Common X-axis rotation to stand upright
-        glRotatef(-90, 1, 0, 0);
+            glPushMatrix();
+                glTranslatef(playerPositions[i].x, playerPositions[i].y, playerPositions[i].z);
+                glScalef(0.1, 0.1, 0.1);
+                // Common X-axis rotation to stand upright
+                glRotatef(-90, 1, 0, 0);
 
-        // Rotate around Z to face left or right
-        if (playerFacingLeft[i]) {
-            glRotatef(180, 0, 0, 1); // Flip to face left
-        } else {
-            glRotatef(0, 0, 0, 1);   // Default (face right)
-        }
-
-        glDisable(GL_LIGHTING);
-        glEnable(GL_TEXTURE_2D);
-
-        float speed = 0.002f;  // Adjust speed as needed
-
-        if(!q1pop)
-        {
-            if (isFalling[i]) {
-                mdl3D->actionTrigger = _3dmodelloader::FALL;
-                fallFramesLeft[i]--;
-                if (fallFramesLeft[i] <= 0) {
-                    playerVisible[i] = false;
-                    isFalling[i] = false;
-                }
-            } else {
-                // Move left or right
+                // Rotate around Z to face left or right
                 if (playerFacingLeft[i]) {
-                    playerPositions[i].x -= speed;
+                    glRotatef(180, 0, 0, 1); // Flip to face left
                 } else {
-                    playerPositions[i].x += speed;
+                    glRotatef(0, 0, 0, 1);   // Default (face right)
                 }
 
-                // Occasionally change direction randomly
-                if (rand() % 200 == 0) {  // 1 in 200 frames (roughly)
-                    playerFacingLeft[i] = !playerFacingLeft[i];
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+
+                float speed = 0.002f;  // Adjust speed as needed
+
+                if(!q1pop)
+                {
+                    if (isFalling[i]) {
+                        mdl3D->actionTrigger = _3dmodelloader::FALL;
+                        fallFramesLeft[i]--;
+                        if (fallFramesLeft[i] <= 0) {
+                            playerVisible[i] = false;
+                            isFalling[i] = false;
+                        }
+                    } else {
+                        // Move left or right
+                        if (playerFacingLeft[i]) {
+                            playerPositions[i].x -= speed;
+                        } else {
+                            playerPositions[i].x += speed;
+                        }
+
+                        // Occasionally change direction randomly
+                        if (rand() % 200 == 0) {  // 1 in 200 frames (roughly)
+                            playerFacingLeft[i] = !playerFacingLeft[i];
+                        }
+
+                        mdl3D->actionTrigger = _3dmodelloader::RUN;
+                    }
                 }
 
-                mdl3D->actionTrigger = _3dmodelloader::RUN;
-            }
+
+                mdl3D->actions();
+                if (!gameOver) mdl3D->Draw();
+
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
         }
-
-
-        mdl3D->actions();
-        mdl3D->Draw();
-
-        glDisable(GL_TEXTURE_2D);
-        glEnable(GL_LIGHTING);
-    glPopMatrix();
-}
 
 
 
@@ -929,72 +1306,151 @@ GLvoid _scene::renderLevelThree()
             );
             glRotatef(-playerAngleY, 0.0, 1.0, 0.0);  // Rotate gun with mouse-dragged camera
             glScalef(0.1, 0.1, 0.1);
-            mdl3DW->actions();
+            if (!gameOver) mdl3DW->actions();
             mdl3DW->Draw();
         glPopMatrix();
 
         for (int i = 0; i < 10; i++) {
-        if (bullets[i].active) {
-            // Move bullet
-            if(!q1pop)
-            {
-                bullets[i].x += bullets[i].dirX * 1.0;
-                bullets[i].y += bullets[i].dirY * 1.0;
-                bullets[i].z += bullets[i].dirZ * 1.0;
+            if (bullets[i].active) {
+                // Move bullet
+                if(!q1pop)
+                {
+                    bullets[i].x += bullets[i].dirX * 1.0;
+                    bullets[i].y += bullets[i].dirY * 1.0;
+                    bullets[i].z += bullets[i].dirZ * 1.0;
+                }
+
+            // Draw bullet
+            glPushMatrix();
+                glDisable(GL_LIGHTING);
+                glColor3f(1, 0, 0);
+                glTranslatef(bullets[i].x, bullets[i].y, bullets[i].z);
+                glutSolidSphere(0.2, 20, 20);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+            glColor3f(1.0,1.0,1.0);
+
+            // Check bullet collision with players
+            for (int j = 0; j < 15; j++) {
+                if (!playerVisible[j]) continue;
+
+                float dx = bullets[i].x - playerPositions[j].x;
+                float dy = bullets[i].y - playerPositions[j].y;
+                float dz = bullets[i].z - playerPositions[j].z;
+                float distance = sqrt(dx*dx + dy*dy + dz*dz);
+
+                if (distance < 2.0) {
+                    isFalling[j] = true;
+                    fallFramesLeft[j] = 30; // Let’s say ~30 frames for fall animation
+                    bullets[i].active = false;
+                    killCount++;
+                    killTextTimer = 2.0;
+                    break;
+                }
+
+
+
             }
 
-        // Draw bullet
-        glPushMatrix();
-            glDisable(GL_LIGHTING);
-            glColor3f(1, 0, 0);
-            glTranslatef(bullets[i].x, bullets[i].y, bullets[i].z);
-            glutSolidSphere(0.2, 20, 20);
-            glEnable(GL_LIGHTING);
-        glPopMatrix();
-        glColor3f(1.0,1.0,1.0);
-
-        // Check bullet collision with players
-        for (int j = 0; j < 15; j++) {
-            if (!playerVisible[j]) continue;
-
-            float dx = bullets[i].x - playerPositions[j].x;
-            float dy = bullets[i].y - playerPositions[j].y;
-            float dz = bullets[i].z - playerPositions[j].z;
-            float distance = sqrt(dx*dx + dy*dy + dz*dz);
-
-            if (distance < 2.0) {
-                isFalling[j] = true;
-                fallFramesLeft[j] = 30; // Let’s say ~30 frames for fall animation
+            //snds->PlaySoundA("sounds/squid-game-gunshot.mp3");
+            // Deactivate if out of bounds
+            if (bullets[i].x > 200 || bullets[i].x < -200 ||
+                bullets[i].z > 200 || bullets[i].z < -200 ||
+                bullets[i].y > 200 || bullets[i].y < -10) {
                 bullets[i].active = false;
-                break;
             }
-
-
-
-        }
-
-        //snds->PlaySoundA("sounds/squid-game-gunshot.mp3");
-        // Deactivate if out of bounds
-        if (bullets[i].x > 200 || bullets[i].x < -200 ||
-            bullets[i].z > 200 || bullets[i].z < -200 ||
-            bullets[i].y > 200 || bullets[i].y < -10) {
-            bullets[i].active = false;
         }
     }
-}
 
-        // --- Wall 1 ---
-        if(!q1pop) wall1->updateMovement();
-        glPushMatrix();
-            glDisable(GL_LIGHTING);
-            glEnable(GL_TEXTURE_2D);
-            wall1->draw(wall1->wallPosX, -3, 105, 15, 10, 1);
-            glDisable(GL_TEXTURE_2D);
-            glEnable(GL_LIGHTING);
-        glPopMatrix();
+        // Freeze everything during Game Over popup
+        if (showGameOverScreen) {
+            gameOverDisplayTimer -= deltaTime;
+            gameOver = true;
+
+            glPushMatrix();
+                glTranslatef(9.0,3.0,110.0);
+                glScalef(3.25, 3.25, 1.0);
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+                gameOverScreen->drawBkgrnd(dim.x, dim.y);  // shows gameover.jpg
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+
+            if (gameOverDisplayTimer <= 0.0) {
+                showGameOverScreen = false;
+                gameOver = false;
+                gameOverDisplayTimer = 0.0;
+
+                if (gameOverDisplayTimer <= 0.0) {
+                    snds->stopMusic();
+                    showGameOverScreen = false;
+                    gameOver = false;
+                    gameOverDisplayTimer = 0.0f;
+
+                    // Reset scene flags
+                    inLandingScene = true;
+                    prlx->parallaxInit("images/landing.png");
+                    inMenuScene = false;
+                    inHelpScene = false;
+                    inInfoScene = false;
+                    inCreditScene = false;
+                    inExitScene = false;
+                    inNewGame = false;
+                    inCross = false;
+                    inGameScene = false;
+
+                    // Reset level states
+                    isLevelOne = false;
+                    isLevelTwo = false;
+                    isLevelThree = false;
+                    levelComplete = false;
+                    levelTwoStarted = false;
+                    levelThreeStarted = false;
+
+                    // Reset game variables
+                    killCount = 0;
+                    gameTimer = 45.0f;
+                    q1pop = false;
+                    q1answer = false;
+
+                    for (int i = 0; i < 15; i++) {
+                        playerVisible[i] = true;
+                        isFalling[i] = false;
+                        fallFramesLeft[i] = 0;
+                    }
+
+                    for (int i = 0; i < 10; i++) {
+                        bullets[i].active = false;
+                    }
+
+                    // Reset player position
+                    playerPosX = 10.0;
+                    playerPosZ = 120.0;
+                    playerAngleY = -110.0;
+                }
+
+            }
+
+            return;  // <-- prevent everything else from running
+        }
+
+        if (wall1Visible) {
+        if(!q1pop && !gameOver) wall1->updateMovement();
+            glPushMatrix();
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+                wall1->draw(wall1->wallPosX, -3, 105, 15, 10, 1);
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+        }
+
+
 
         // --- Wall 2 ---
-        if(!q1pop) wall2->updateMovement();
+        if (wall2Visible){
+        if(!q1pop && !gameOver) wall2->updateMovement();
         glPushMatrix();
             glDisable(GL_LIGHTING);
             glEnable(GL_TEXTURE_2D);
@@ -1002,15 +1458,130 @@ GLvoid _scene::renderLevelThree()
             glDisable(GL_TEXTURE_2D);
             glEnable(GL_LIGHTING);
         glPopMatrix();
+        }
 
-        // --- Wall 3 ---
-        if(!q1pop) wall3->updateMovement();
+        if (wall3Breaking) {
+            for (int i = 0; i < 50; i++) {
+                if (!wall3Fragments[i].active) continue;
+
+                // Update fragment
+                wall3Fragments[i].x += wall3Fragments[i].vx;
+                wall3Fragments[i].y += wall3Fragments[i].vy;
+                wall3Fragments[i].z += wall3Fragments[i].vz;
+                wall3Fragments[i].vy -= 0.01f;  // gravity
+
+                wall3Fragments[i].lifetime -= 0.016f; // Assuming 60FPS
+                if (wall3Fragments[i].lifetime <= 0.0f) {
+                    wall3Fragments[i].active = false;
+                }
+
+                // Draw fragment
+                glPushMatrix();
+                glTranslatef(wall3Fragments[i].x, wall3Fragments[i].y, wall3Fragments[i].z);
+                glColor3f(0.6f, 0.3f, 0.2f); // brick color
+                glutSolidCube(0.6);  // smaller cubes
+                glPopMatrix();
+            }
+
+            // Stop breaking once all fragments expire
+            bool stillActive = false;
+            for (int i = 0; i < 50; i++) {
+                if (wall3Fragments[i].active) {
+                    stillActive = true;
+                    break;
+                }
+            }
+            if (!stillActive) wall3Breaking = false;
+        }
+
+        else if (wall3Visible) {
+            if (!q1pop && !gameOver) wall3->updateMovement();
+            glPushMatrix();
+                glDisable(GL_LIGHTING);
+                glEnable(GL_TEXTURE_2D);
+                wall3->draw(wall3->wallPosX, -3, 85, 15, 10, 1);
+                glDisable(GL_TEXTURE_2D);
+                glEnable(GL_LIGHTING);
+            glPopMatrix();
+        }
+
+
+        if (killTextTimer > 0.0) {
+            glPushMatrix();
+                glMatrixMode(GL_PROJECTION);
+                glPushMatrix();
+                glLoadIdentity();
+                glOrtho(0, dim.x, dim.y, 0, -1, 1);
+                glMatrixMode(GL_MODELVIEW);
+                glPushMatrix();
+                glLoadIdentity();
+
+                glDisable(GL_LIGHTING);
+
+                // Background box
+                int boxX = dim.x / 2 - 120 + 11;
+                int boxY = dim.y / 2 - 30;
+                int boxWidth = 240;
+                int boxHeight = 50;
+
+                glColor4f(0.0f, 0.0f, 0.0f, 0.6f); // Semi-transparent black
+                glBegin(GL_QUADS);
+                    glVertex2i(boxX, boxY);
+                    glVertex2i(boxX + boxWidth, boxY);
+                    glVertex2i(boxX + boxWidth, boxY + boxHeight);
+                    glVertex2i(boxX, boxY + boxHeight);
+                glEnd();
+
+                glColor3f(1.0, 1.0, 1.0);
+                glRasterPos2i(dim.x / 2 - 50, dim.y / 2);
+                string message = to_string(killCount) + " Players Killed!";
+                for (int i = 0; message[i] != '\0'; i++) {
+                    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, message[i]);
+                }
+
+                glEnable(GL_LIGHTING);
+                glPopMatrix();
+                glMatrixMode(GL_PROJECTION);
+                glPopMatrix();
+                glMatrixMode(GL_MODELVIEW);
+            glPopMatrix();
+
+            killTextTimer -= 0.005;
+        }
+
+        if (killCount >= 10 && gameTimer > 0.0f) {
+            isLevelTwo = false;
+            isLevelThree = false;
+            inMenuScene = true;
+            // Optional: reset killCount if needed
+        }
+
+        // Show countdown timer on screen
         glPushMatrix();
+            glMatrixMode(GL_PROJECTION);
+            glPushMatrix();
+            glLoadIdentity();
+            glOrtho(0, dim.x, dim.y, 0, -1, 1);  // Set 2D projection
+
+            glMatrixMode(GL_MODELVIEW);
+            glPushMatrix();
+            glLoadIdentity();
+
             glDisable(GL_LIGHTING);
-            glEnable(GL_TEXTURE_2D);
-            wall3->draw(wall3->wallPosX, -3, 85, 15, 10, 1);
-            glDisable(GL_TEXTURE_2D);
+            glColor3f(1.0f, 1.0f, 1.0f);  // White text
+            glRasterPos2i(20, 40);  // Top-left corner
+
+            string timerText = "Time Left: " + to_string((int)gameTimer) + "s";
+            for (char c : timerText) {
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+            }
+
             glEnable(GL_LIGHTING);
+
+            glPopMatrix(); // ModelView
+            glMatrixMode(GL_PROJECTION);
+            glPopMatrix(); // Projection
+            glMatrixMode(GL_MODELVIEW);
         glPopMatrix();
 
 }
@@ -1195,25 +1766,41 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             if (selectedOption != -1) {
                 if (selectedOption == correctOption) {
-                    // Correct answer
                     q1answer = true;
                     q1pop = false;
-                    // Call a function to destroy a wall
-                    //destroyWall();
-                } else {
-                    attempts++;
-                    if (attempts >= 2) {
-                        q1answer = true;
-                        q1pop = false;
-                        // Call a function to add wall
-                        //addExtraWall();
+
+                    if (wall3Visible && !wall3Breaking) {
+                        wall3Breaking = true;
+                        wall3Visible = false;
+
+                        snds->PlaySoundA("sounds/wall hitting.mp3");
+
+                        for (int i = 0; i < 50; i++) {
+                            wall3Fragments[i].x = wall3->wallPosX + (rand() % 15 - 7); // Width
+                            wall3Fragments[i].y = 2.0f + (rand() % 10); // Height
+                            wall3Fragments[i].z = 85.0f + (rand() % 3 - 1); // Depth
+
+                            wall3Fragments[i].vx = (rand() % 200 - 100) / 100.0f * 0.2;
+                            wall3Fragments[i].vy = (rand() % 100) / 100.0f * 0.5;
+                            wall3Fragments[i].vz = (rand() % 200 - 100) / 100.0f * 0.2;
+
+                            wall3Fragments[i].lifetime = 15.0;
+                            wall3Fragments[i].active = true;
+                        }
                     }
+                }
+
+                 else {
+                    q1answer = true;
+                    q1pop = false;
+
+                    showGameOverScreen = true;
+                    gameOverDisplayTimer = 10.0f;
+                    snds->PlaySoundA("sounds/gameover.mp3"); // Add your own game over sound file
                 }
             }
         }
         break;
-
-
 
     default:
         // Game movement
@@ -1501,8 +2088,8 @@ int _scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (cam->cameraAngleY > 89.0) cam->cameraAngleY = 89.0;
             if (cam->cameraAngleY < -89.0) cam->cameraAngleY = -89.0;
 
-            if (cameraPitch > 89.0f) cameraPitch = 89.0f;
-            if (cameraPitch < -89.0f) cameraPitch = -89.0f;
+            if (cameraPitch > 89.0) cameraPitch = 89.0;
+            if (cameraPitch < -89.0) cameraPitch = -89.0;
 
 
             lastMouseX = mouseX;

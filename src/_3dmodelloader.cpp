@@ -118,7 +118,7 @@ int _3dmodelloader::ReadMD2Model(const char* filename, struct md2_model_t* mdl)
  //       {
  //       cout<<mdl->skins[i].name<<endl;
 
-        myTex->loadImage("images/models/aliensoldier/soldier.jpg");
+        myTex->loadImage("images/dress1.png");
         mdl->tex_id = myTex->texID;
   //  }
      EndFrame = mdl->header.num_frames-1;
