@@ -26,6 +26,8 @@ class _sounds
 
         ISound* gunshotSound = nullptr;
 
+        void StopAllSounds();
+
     protected:
 
     private:

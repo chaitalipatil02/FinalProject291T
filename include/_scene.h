@@ -9,6 +9,13 @@ struct Bullet {
     bool active;
 };
 
+struct Fragment {
+    float x, y, z;
+    float vx, vy, vz;  // velocity
+    float lifetime;
+    bool active;
+};
+
 class _scene
 {
     public:
@@ -85,6 +92,7 @@ class _scene
          bool playerFacingLeft[15];  // true = facing left, false = facing right
          bool playerVisible[15];
          bool isLevelThree;
+         bool isLevelOne;
 
          bool q1pop = false;
          bool q1answer = false;
@@ -97,9 +105,36 @@ class _scene
          bool timerStarted = false;
          float lastTime = 0.0;
          bool levelComplete = false;
+         bool gameOver;
+         float gameOverTimer;
+
+         bool levelTwoStarted = false;
+         bool levelThreeStarted= false;
+         bool levelOneStarted = false;
 
 
+         bool wall1Breaking = false;
+         bool wall2Breaking = false;
+         bool wall3Breaking = false;
 
+         float wall1BreakTimer = 0.0;
+         float wall2BreakTimer = 0.0;
+         float wall3BreakTimer = 0.0;
+
+         bool wall1Visible = true;
+         bool wall2Visible = true;
+         bool wall3Visible = true;
+
+
+         Fragment wall3Fragments[50];  // Number of chunks
+
+         bool showGameOverScreen = false;
+         float gameOverDisplayTimer = 0.0;
+         bool win = false;
+         float winTimer;
+         bool showWin = false;
+         float showDisplayTimer = 0.0;
+         double lastAutoTurnTime = 0.0;
 
 
     protected:
